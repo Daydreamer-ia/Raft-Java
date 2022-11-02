@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+option java_multiple_files = true;
+option java_package = "com.daydreamer.raft.transport.grpc";
+option java_outer_classname = "RequestRpc";
+
+/**
+  service
+*/
+service Requester {
+  rpc request (Message) returns (Message){
+
+  }
+}
+
+/**
+  base message
+ */
+message Message {
+  google.protobuf.Any body = 3;
+}
+
