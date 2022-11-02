@@ -8,17 +8,62 @@ public interface MessageOrBuilder extends
     com.google.protobuf.MessageOrBuilder {
 
   /**
-   * <code>.google.protobuf.Any body = 3;</code>
-   * @return Whether the body field is set.
+   * <pre>
+   * payload
+   * </pre>
+   *
+   * <code>string data = 1;</code>
+   * @return The data.
    */
-  boolean hasBody();
+  String getData();
   /**
-   * <code>.google.protobuf.Any body = 3;</code>
-   * @return The body.
+   * <pre>
+   * payload
+   * </pre>
+   *
+   * <code>string data = 1;</code>
+   * @return The bytes for data.
    */
-  com.google.protobuf.Any getBody();
+  com.google.protobuf.ByteString
+      getDataBytes();
+
   /**
-   * <code>.google.protobuf.Any body = 3;</code>
+   * <pre>
+   * conn id
+   * </pre>
+   *
+   * <code>string id = 2;</code>
+   * @return The id.
    */
-  com.google.protobuf.AnyOrBuilder getBodyOrBuilder();
+  String getId();
+  /**
+   * <pre>
+   * conn id
+   * </pre>
+   *
+   * <code>string id = 2;</code>
+   * @return The bytes for id.
+   */
+  com.google.protobuf.ByteString
+      getIdBytes();
+
+  /**
+   * <pre>
+   * request or response type
+   * </pre>
+   *
+   * <code>string type = 3;</code>
+   * @return The type.
+   */
+  String getType();
+  /**
+   * <pre>
+   * request or response type
+   * </pre>
+   *
+   * <code>string type = 3;</code>
+   * @return The bytes for type.
+   */
+  com.google.protobuf.ByteString
+      getTypeBytes();
 }

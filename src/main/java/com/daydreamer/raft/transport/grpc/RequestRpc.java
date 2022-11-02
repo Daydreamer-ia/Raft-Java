@@ -29,10 +29,10 @@ public final class RequestRpc {
   static {
     String[] descriptorData = {
       "\n\ngrpc.proto\032\031google/protobuf/any.proto\"" +
-      "-\n\007Message\022\"\n\004body\030\003 \001(\0132\024.google.protob" +
-      "uf.Any2,\n\tRequester\022\037\n\007request\022\010.Message" +
-      "\032\010.Message\"\000B2\n\"com.daydreamer.raft.tran" +
-      "sport.grpcB\nRequestRpcP\001b\006proto3"
+      "1\n\007Message\022\014\n\004data\030\001 \001(\t\022\n\n\002id\030\002 \001(\t\022\014\n\004" +
+      "type\030\003 \001(\t2,\n\tRequester\022\037\n\007request\022\010.Mes" +
+      "sage\032\010.Message\"\000B2\n\"com.daydreamer.raft." +
+      "transport.grpcB\nRequestRpcP\001b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -44,7 +44,7 @@ public final class RequestRpc {
     internal_static_Message_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_Message_descriptor,
-        new String[] { "Body", });
+        new String[] { "Data", "Id", "Type", });
     com.google.protobuf.AnyProto.getDescriptor();
   }
 

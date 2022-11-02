@@ -17,4 +17,11 @@ public interface RequestHandler<S extends Request, T extends Response> {
      * @return response
      */
     T handle(S request);
+    
+    /**
+     * get data source
+     *
+     * @return request
+     */
+    Class<S> getSource();
 }

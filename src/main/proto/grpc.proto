@@ -19,6 +19,8 @@ service Requester {
   base message
  */
 message Message {
-  google.protobuf.Any body = 3;
+  string data = 1; // payload
+  string id = 2;   // conn id
+  string type = 3; // request or response type
 }
 
