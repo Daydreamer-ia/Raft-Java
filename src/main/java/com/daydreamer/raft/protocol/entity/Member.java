@@ -2,7 +2,7 @@ package com.daydreamer.raft.protocol.entity;
 
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.constant.NodeStatus;
-
+import com.daydreamer.raft.transport.connection.Connection;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -55,7 +55,12 @@ public class Member {
     /**
      * healthy or not
      */
-    private NodeStatus status;
+    private AtomicReference<NodeStatus> status;
+    
+    /**
+     * conn
+     */
+    private Connection connection;
     
     /**
      * last request id
@@ -70,8 +75,24 @@ public class Member {
         this.lastRequestId = lastRequestId;
     }
     
+    public long getLastActiveTime() {
+        return lastActiveTime;
+    }
+    
+    public void setLastActiveTime(long lastActiveTime) {
+        this.lastActiveTime = lastActiveTime;
+    }
+    
+    public Connection getConnection() {
+        return connection;
+    }
+    
+    public void setConnection(Connection connection) {
+        this.connection = connection;
+    }
+    
     public NodeStatus getStatus() {
-        return status;
+        return status.get();
     }
     
     public String getMemberId() {
@@ -90,8 +111,16 @@ public class Member {
         return this.role.compareAndSet(oldRole, newRole);
     }
     
-    public void setStatus(NodeStatus status) {
-        this.status = status;
+    public boolean setStatus(NodeStatus newStatus, NodeStatus expected) {
+        return this.status.compareAndSet(expected, newStatus);
+    }
+    
+    public void setStatus(NodeStatus newStatus) {
+        this.status.set(newStatus);
+    }
+    
+    public void setRole(NodeRole newRole) {
+        this.role.set(newRole);
     }
     
     public int getTerm() {
@@ -132,13 +161,5 @@ public class Member {
     
     public void setAddress(String address) {
         this.address = address;
-    }
-    
-    public long getLastActiveTime() {
-        return lastActiveTime;
-    }
-    
-    public void setLastActiveTime(long lastActiveTime) {
-        this.lastActiveTime = lastActiveTime;
     }
 }

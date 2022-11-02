@@ -1,5 +1,8 @@
 package com.daydreamer.raft.transport.connection;
 
+import com.daydreamer.raft.transport.entity.Request;
+import com.daydreamer.raft.transport.entity.Response;
+
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
@@ -8,49 +11,35 @@ import java.util.concurrent.TimeoutException;
  */
 public abstract class Connection {
     
-    private String ip;
+    private String id;
     
-    private int port;
-    
-    private String addr;
-    
-    public String getIp() {
-        return ip;
+    public Connection(String id) {
+        this.id = id;
     }
     
-    public void setIp(String ip) {
-        this.ip = ip;
+    public String getId() {
+        return id;
     }
     
-    public int getPort() {
-        return port;
+    public void setId(String id) {
+        this.id = id;
     }
     
-    public void setPort(int port) {
-        this.port = port;
-    }
-    
-    public String getAddr() {
-        return addr;
-    }
-    
-    public void setAddr(String addr) {
-        this.addr = addr;
-    }
+    /**
+     * send request
+     *
+     * @param  request request
+     * @param timeout timeout
+     * @throws TimeoutException exception if time out
+     * @return future
+     */
+    public abstract Response request(Request request, long timeout) throws Exception;
     
     /**
      * send asyn
      *
-     * @param o data
-     * @throws TimeoutException exception if time out
+     * @param request data
      * @return future
      */
-    public abstract Future<Boolean> requestSyn(Object o) throws TimeoutException;
-    
-    /**
-     * send message
-     *
-     * @throws Exception if exception
-     */
-    public abstract void request() throws Exception;
+    public abstract Future<Response> request(Request request) throws Exception;
 }
