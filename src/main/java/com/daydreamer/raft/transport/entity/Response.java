@@ -2,12 +2,14 @@ package com.daydreamer.raft.transport.entity;
 
 import com.daydreamer.raft.transport.constant.ResponseCode;
 
+import java.io.Serializable;
+
 /**
  * @author Daydreamer
  *
  * payload of response
  */
-public abstract class Response {
+public abstract class Response implements Serializable {
     
     private int resultCode = ResponseCode.SUCCESS_CODE;
     

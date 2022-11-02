@@ -1,5 +1,6 @@
 package com.daydreamer.raft.transport.entity;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -9,7 +10,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * payload of request
  */
-public abstract class Request {
+public abstract class Request implements Serializable {
     
     private static final long serialVersionUID = 11988178431L;
     
@@ -26,7 +27,7 @@ public abstract class Request {
     /**
      * data header
      */
-    private final Map<String, String> headers = new HashMap<String, String>();
+    private Map<String, String> headers = new HashMap<String, String>();
     
     public Map<String, String> getHeaders() {
         return headers;
@@ -34,6 +35,10 @@ public abstract class Request {
     
     public long getRequestId() {
         return requestId;
+    }
+    
+    public void setHeaders(Map<String, String> headers) {
+        this.headers = headers;
     }
     
 }
