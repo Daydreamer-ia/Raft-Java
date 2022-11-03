@@ -1,85 +1,125 @@
 package com.daydreamer.raft.protocol.core;
 
-import com.daydreamer.raft.protocol.constant.NodeRole;
-import com.daydreamer.raft.protocol.constant.NodeStatus;
-import com.daydreamer.raft.protocol.entity.Member;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
+import com.daydreamer.raft.transport.connection.Closeable;
+import com.sun.org.slf4j.internal.Logger;
+import com.sun.org.slf4j.internal.LoggerFactory;
 
-import java.net.InetAddress;
-import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Daydreamer
  */
-public abstract class AbstractRaftServer {
+public abstract class AbstractRaftServer implements Closeable {
     
-    /**
-     * raft member manager
-     */
-    private RaftMemberManager raftMemberManager;
-    
-    /**
-     * raft config
-     */
-    private RaftConfig raftConfig = new RaftConfig();
-    
-    /**
-     * current node
-     */
-    private Member self;
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRaftServer.class);
     
     /**
      * if there is a leader in cluster
      */
-    private boolean normalCluster = false;
+    protected AtomicBoolean normalCluster = new AtomicBoolean(false);
     
-    public AbstractRaftServer(RaftMemberManager raftMemberManager) {
-        this.raftMemberManager = raftMemberManager;
+    /**
+     * last time when leader active
+     */
+    protected long leaderLastActiveTime;
+    
+    /**
+     * raft config
+     */
+    protected RaftConfig raftConfig;
+    
+    /**
+     * vote executor
+     */
+    private ExecutorService executorService = new ThreadPoolExecutor(1, 1, 1000, TimeUnit.MICROSECONDS, new LinkedBlockingQueue<>(), new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable runnable) {
+            Thread thread = new Thread(runnable);
+            thread.setName("Ask-Vote-Thread");
+            thread.setDaemon(true);
+            return thread;
+        }
+    });
+    
+    public AbstractRaftServer(RaftConfig raftConfig) {
+        this.raftConfig = raftConfig;
     }
     
     /**
      * init status of server
      */
-    private void start() {
+    public void start() {
         try {
-            // init current cluster
-            self = initSelf();
-            // init stub
-            
-            
+            // start server
+            doStartServer();
         } catch (Exception e) {
             throw new IllegalStateException("Fail to start raft server, because " + e.getLocalizedMessage());
         }
     }
     
     /**
-     * init current node member
+     * whether current node has just one leader
      *
-     * @return current node member
-     * @throws Exception
+     * @return whether current node has just one leader
      */
-    public Member initSelf() throws Exception {
-        String ip = InetAddress.getLocalHost().getHostAddress();
-        int port = raftConfig.getPort();
-        Member self = new Member();
-        self.setIp(ip);
-        self.setPort(port);
-        self.setAddress(ip + ":" + port);
-        self.setRole(NodeRole.CANDIDATE, null);
-        self.setMemberId(UUID.randomUUID().toString());
-        self.setStatus(NodeStatus.UP);
-        self.setTerm(0);
-        self.setLogId(0);
-        return self;
+    public boolean normalCluster() {
+        return normalCluster.get();
     }
     
     /**
-     * get unique modifier as id in cluster, which represents the current node
+     * ask votes to be leader
      *
-     * @return id
+     * @throws Exception
      */
-    public String getModifier() {
-        return self.getMemberId();
+    private void askVoteLeader() {
+        executorService.execute(() -> {
+            try {
+                while (true) {
+                    // No election will be held if the following conditions are met:
+                    // if current node is leader
+                    // if cluster has leader base on normalCluster variable
+                    if (!(isLeader() || System.currentTimeMillis() - leaderLastActiveTime > raftConfig.getAbnormalActiveInterval())) {
+                        normalCluster.compareAndSet(false, true);
+                        requestVote();
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.error("[AbstractRaftServer] - Fail to do vote, because " + e.getLocalizedMessage());
+            }
+        });
+    }
+    
+    /**
+     * start server
+     */
+    protected abstract void doStartServer();
+    
+    /**
+     * request for leader
+     *
+     * @return whether current node being leader
+     */
+    public abstract boolean requestVote();
+    
+    /**
+     * whether current node is leader
+     *
+     * @return whether current node is leader
+     */
+    public abstract boolean isLeader();
+    
+    /**
+     * refresh if leader active
+     */
+    public void refreshLeaderActive() {
+        leaderLastActiveTime = System.currentTimeMillis();
+        normalCluster.compareAndSet(true, false);
     }
     
 }

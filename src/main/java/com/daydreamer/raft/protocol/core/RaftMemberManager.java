@@ -1,7 +1,6 @@
 package com.daydreamer.raft.protocol.core;
 
 import com.daydreamer.raft.protocol.entity.Member;
-
 import java.util.List;
 
 /**
@@ -10,6 +9,11 @@ import java.util.List;
  * It is used to hold the message of member
  */
 public interface RaftMemberManager {
+    
+    /**
+     * init manager
+     */
+    void init();
     
     /**
      * get all members
@@ -24,13 +28,6 @@ public interface RaftMemberManager {
      * @return normal members
      */
     List<Member> getActiveMember();
-    
-    /**
-     * whether current node is leader
-     *
-     * @return whether current node is leader
-     */
-    boolean isLeader();
     
     /**
      * add a new member
@@ -55,14 +52,6 @@ public interface RaftMemberManager {
      * @return member
      */
     Member getMemberById(String id);
-    
-    /**
-     * clean request id
-     *
-     * @param id member id
-     * @return whether success
-     */
-    boolean restartMember(String id);
     
     /**
      * refresh active time

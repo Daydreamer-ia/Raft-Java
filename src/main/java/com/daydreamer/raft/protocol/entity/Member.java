@@ -62,19 +62,6 @@ public class Member {
      */
     private Connection connection;
     
-    /**
-     * last request id
-     */
-    private long lastRequestId;
-    
-    public long getLastRequestId() {
-        return lastRequestId;
-    }
-    
-    public void setLastRequestId(long lastRequestId) {
-        this.lastRequestId = lastRequestId;
-    }
-    
     public long getLastActiveTime() {
         return lastActiveTime;
     }

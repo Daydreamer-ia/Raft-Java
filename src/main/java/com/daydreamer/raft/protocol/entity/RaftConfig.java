@@ -9,23 +9,33 @@ import java.util.List;
  */
 public class RaftConfig {
     
-    private List<String> memberIp;
+    private List<String> memberAddresses;
     
     private int heartInterval = 5000;
     
     private int port = 10089;
+    
+    private int abnormalActiveInterval = 2000;
     
     static {
         // TODO 动态加载配置
         
     }
     
-    public List<String> getMemberIp() {
-        return memberIp;
+    public int getAbnormalActiveInterval() {
+        return abnormalActiveInterval;
     }
     
-    public void setMemberIp(List<String> memberIp) {
-        this.memberIp = memberIp;
+    public void setAbnormalActiveInterval(int abnormalActiveInterval) {
+        this.abnormalActiveInterval = abnormalActiveInterval;
+    }
+    
+    public List<String> getMemberAddresses() {
+        return memberAddresses;
+    }
+    
+    public void setMemberAddresses(List<String> memberAddresses) {
+        this.memberAddresses = memberAddresses;
     }
     
     public int getHeartInterval() {
