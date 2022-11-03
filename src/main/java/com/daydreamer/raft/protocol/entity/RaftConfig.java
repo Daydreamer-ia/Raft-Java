@@ -11,7 +11,7 @@ public class RaftConfig {
     
     private List<String> memberIp;
     
-    private long heartInterval = 2000;
+    private int heartInterval = 5000;
     
     private int port = 10089;
     
@@ -28,11 +28,11 @@ public class RaftConfig {
         this.memberIp = memberIp;
     }
     
-    public long getHeartInterval() {
+    public int getHeartInterval() {
         return heartInterval;
     }
     
-    public void setHeartInterval(long heartInterval) {
+    public void setHeartInterval(int heartInterval) {
         this.heartInterval = heartInterval;
     }
     

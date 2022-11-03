@@ -9,23 +9,23 @@ import com.daydreamer.raft.transport.entity.Request;
  */
 public class VoteRequest extends Request {
     
-    private int term;
+    private int lastTerm;
     
-    private long logId;
+    private long lastLogIndex;
     
-    public int getTerm() {
-        return term;
+    public int getLastTerm() {
+        return lastTerm;
     }
     
-    public void setTerm(int term) {
-        this.term = term;
+    public void setLastTerm(int lastTerm) {
+        this.lastTerm = lastTerm;
     }
     
-    public long getLogId() {
-        return logId;
+    public long getLastLogIndex() {
+        return lastLogIndex;
     }
     
-    public void setLogId(long logId) {
-        this.logId = logId;
+    public void setLastLogIndex(long lastLogIndex) {
+        this.lastLogIndex = lastLogIndex;
     }
 }

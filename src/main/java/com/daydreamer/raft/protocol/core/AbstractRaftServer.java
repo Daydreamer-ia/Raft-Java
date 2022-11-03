@@ -73,4 +73,13 @@ public abstract class AbstractRaftServer {
         return self;
     }
     
+    /**
+     * get unique modifier as id in cluster, which represents the current node
+     *
+     * @return id
+     */
+    public String getModifier() {
+        return UUID.randomUUID().toString();
+    }
+    
 }

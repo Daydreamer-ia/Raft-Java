@@ -1,4 +1,4 @@
-package com.daydreamer.raft.common;
+package com.daydreamer.raft.common.utils;
 
 import com.daydreamer.raft.transport.entity.Request;
 import com.daydreamer.raft.transport.entity.Response;

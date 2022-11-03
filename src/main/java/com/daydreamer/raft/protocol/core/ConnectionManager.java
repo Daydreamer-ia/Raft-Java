@@ -15,20 +15,6 @@ public interface ConnectionManager {
     void init();
     
     /**
-     * register new connection
-     *
-     * @param connection new connection
-     */
-    void register(Connection connection);
-    
-    /**
-     * deregister connection
-     *
-     * @param id conn id
-     */
-    void deregister(String id);
-    
-    /**
      * refresh active time
      *
      * @param id conn id

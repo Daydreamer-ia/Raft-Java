@@ -64,4 +64,15 @@ public class RequestHandlerHolder {
         }
         return handler.handle(request);
     }
+    
+    /**
+     * register new handler
+     *
+     * @param handler handler
+     */
+    public static void register(RequestHandler<Request, Response> handler) {
+        if (!REGISTRY.containsKey(handler.getSource())) {
+            REGISTRY.put(handler.getSource(), handler);
+        }
+    }
 }
