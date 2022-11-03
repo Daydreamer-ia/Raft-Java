@@ -79,7 +79,7 @@ public abstract class AbstractRaftServer {
      * @return id
      */
     public String getModifier() {
-        return UUID.randomUUID().toString();
+        return self.getMemberId();
     }
     
 }
