@@ -12,6 +12,7 @@ import com.daydreamer.raft.transport.entity.Request;
 import com.daydreamer.raft.transport.entity.Response;
 import com.daydreamer.raft.transport.entity.request.VoteCommitRequest;
 import com.daydreamer.raft.transport.entity.request.VoteRequest;
+import com.daydreamer.raft.transport.entity.response.VoteCommitResponse;
 import com.daydreamer.raft.transport.entity.response.VoteResponse;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -80,7 +81,7 @@ public class GrpcRaftServer extends AbstractRaftServer {
         }
         return batchRequestMembers(new VoteCommitRequest(self.getTerm(), self.getLogId()), response -> {
             // nothing to do
-            return true;
+            return ((VoteCommitResponse) response).isAccepted();
         });
     }
     
