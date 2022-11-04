@@ -1,13 +1,12 @@
 package com.daydreamer.raft.common.service;
 
+import com.daydreamer.raft.common.utils.MD5Utils;
+
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.FileSystems;
-import java.nio.file.Paths;
-import java.nio.file.StandardWatchEventKinds;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -21,11 +20,6 @@ import java.util.logging.Logger;
 public abstract class PropertiesReader<T extends ActiveProperties> {
     
     private static final Logger LOGGER = Logger.getLogger(PropertiesReader.class.getSimpleName());
-    
-    /**
-     * watch dog
-     */
-    private WatchService watchService;
     
     /**
      * target file
@@ -42,6 +36,11 @@ public abstract class PropertiesReader<T extends ActiveProperties> {
      */
     private T properties;
     
+    /**
+     * file hash
+     */
+    private String hash = "";
+    
     public PropertiesReader(String filePath, T properties) {
         this.filePath = filePath;
         this.properties = properties;
@@ -54,12 +53,18 @@ public abstract class PropertiesReader<T extends ActiveProperties> {
             });
             return thread;
         });
+        // init
+        init();
+    }
+    
+    /**
+     * init method
+     */
+    private void init() {
         // load
         load();
-        // listen
-        listen();
         // add job
-        executorService.execute(this::init);
+        executorService.execute(this::changeDetectJob);
     }
     
     /**
@@ -75,43 +80,32 @@ public abstract class PropertiesReader<T extends ActiveProperties> {
             p.load(in);
             // populate
             populateProperties(p, properties);
+            // calculate hash
+            hash = MD5Utils.getFileMD5String(new File(filePath));
         } catch (Exception e) {
             LOGGER.severe("[PropertiesReader] - Fail to load properties, because: " + e.getLocalizedMessage());
         }
         return p;
     }
     
-    private void listen() {
-        // TODO here are some problem
-//        try {
-//            // listen
-//            watchService = FileSystems.getDefault().newWatchService();
-//            Paths.get(filePath).register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            LOGGER.severe("[PropertiesReader] - Fail to listen to properties, because: " + e.getMessage());
-//        }
-    }
     
     /**
      * watch job
      */
-    private void init() {
-        // TODO here are some problem
-//        while (true) {
-//            try {
-//                WatchKey key = null;
-//                while ((key = watchService.take()) != null) {
-//                    // there is a modify event here
-//                    populateProperties(load(), properties);
-//                    // reset listen poll
-//                    key.reset();
-//                }
-//            } catch (Exception e) {
-//                // nothing to do
-//                LOGGER.severe("[PropertiesReader] - Fail to action when file change, because: " + e.getLocalizedMessage());
-//            }
-//        }
+    private void changeDetectJob() {
+        File file = new File(filePath);
+        if (!file.exists()) {
+            throw new IllegalStateException("[PropertiesReader] - Properties loss, file name: " + filePath);
+        }
+        try {
+            String strHash = MD5Utils.getFileMD5String(file);
+            // if change
+            if (!strHash.equals(hash)) {
+                populateProperties(load(), properties);
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("[PropertiesReader] - Properties loss, file name: " + filePath);
+        }
     }
     
     /**
@@ -126,7 +120,7 @@ public abstract class PropertiesReader<T extends ActiveProperties> {
     /**
      * base on the properties to do some
      *
-     * @param properties properties
+     * @param properties       properties
      * @param activeProperties active properties
      */
     public abstract void populateProperties(Properties properties, T activeProperties);
