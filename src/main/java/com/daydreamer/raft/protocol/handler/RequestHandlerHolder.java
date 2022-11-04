@@ -70,9 +70,9 @@ public class RequestHandlerHolder {
      *
      * @param handler handler
      */
-    public static void register(RequestHandler<Request, Response> handler) {
+    public static void register(RequestHandler<? extends Request, ? extends Response> handler) {
         if (!REGISTRY.containsKey(handler.getSource())) {
-            REGISTRY.put(handler.getSource(), handler);
+            REGISTRY.put(handler.getSource(), (RequestHandler<Request, Response>) handler);
         }
     }
 }

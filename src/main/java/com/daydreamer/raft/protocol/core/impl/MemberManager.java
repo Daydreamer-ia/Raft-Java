@@ -90,7 +90,7 @@ public class MemberManager implements RaftMemberManager {
     
     @Override
     public boolean addNewMember(Member member) {
-        return false;
+        throw new UnsupportedOperationException("Current version don't support member change!");
     }
     
     @Override
@@ -104,7 +104,7 @@ public class MemberManager implements RaftMemberManager {
     }
     
     @Override
-    public void refreshMemberActive(String id) {
-    
+    public boolean isLeader() {
+        return NodeRole.LEADER.equals(self.getRole());
     }
 }

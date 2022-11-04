@@ -1,7 +1,6 @@
 package com.daydreamer.raft.transport.connection.impl.grpc;
 
 import com.daydreamer.raft.common.utils.MsgUtils;
-import com.daydreamer.raft.protocol.core.ConnectionManager;
 import com.daydreamer.raft.protocol.handler.RequestHandlerHolder;
 import com.daydreamer.raft.transport.entity.Response;
 import com.daydreamer.raft.transport.grpc.Message;
@@ -15,16 +14,8 @@ import io.grpc.stub.StreamObserver;
  */
 public class GrpcRequestServerCore extends RequesterGrpc.RequesterImplBase {
     
-    private ConnectionManager connectionManager;
-    
-    public GrpcRequestServerCore(ConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
-    }
-    
     @Override
     public void request(Message msg, StreamObserver<Message> responseObserver) {
-        // refresh active time
-        connectionManager.refreshActiveTime(msg.getId());
         // handle
         Response response = RequestHandlerHolder.handle(MsgUtils.convertRequest(msg));
         // response

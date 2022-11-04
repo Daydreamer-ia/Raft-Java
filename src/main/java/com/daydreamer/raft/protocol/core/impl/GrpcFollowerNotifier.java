@@ -1,7 +1,7 @@
 package com.daydreamer.raft.protocol.core.impl;
 
 import com.daydreamer.raft.protocol.constant.NodeStatus;
-import com.daydreamer.raft.protocol.core.ConnectionManager;
+import com.daydreamer.raft.protocol.core.FollowerNotifier;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.entity.Member;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
@@ -13,7 +13,6 @@ import com.sun.org.slf4j.internal.Logger;
 import com.sun.org.slf4j.internal.LoggerFactory;
 
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -23,15 +22,15 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * It is a implmement to retain grpc connection.
  */
-public class GrpcConnectionManager implements ConnectionManager {
+public class GrpcFollowerNotifier implements FollowerNotifier {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(GrpcConnectionManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GrpcFollowerNotifier.class);
     
     private RaftMemberManager raftMemberManager;
     
     private RaftConfig raftConfig;
     
-    public GrpcConnectionManager(RaftMemberManager raftMemberManager, RaftConfig raftConfig) {
+    public GrpcFollowerNotifier(RaftMemberManager raftMemberManager, RaftConfig raftConfig) {
         this.raftMemberManager = raftMemberManager;
         this.raftConfig = raftConfig;
     }
@@ -48,8 +47,16 @@ public class GrpcConnectionManager implements ConnectionManager {
     
     @Override
     public void init() {
-        Runnable job = () -> {
-            try {
+        // submit job
+        executor.scheduleAtFixedRate(this::keepFollowers, 0, raftConfig.getHeartInterval(), TimeUnit.MICROSECONDS);
+    }
+    
+    @Override
+    public void keepFollowers() {
+        try {
+            // if current node is leader
+            // tell follower to keep
+            if (raftMemberManager.isLeader()) {
                 List<Member> allMember = raftMemberManager.getAllMember();
                 // not active a period time
                 CountDownLatch countDownLatch = new CountDownLatch(allMember.size());
@@ -60,26 +67,27 @@ public class GrpcConnectionManager implements ConnectionManager {
                         if (currentTime - lastActiveTime > raftConfig.getHeartInterval()) {
                             Connection connection = member.getConnection();
                             if (connection != null) {
-                                connection.request(new HeartbeatRequest(), 2000, new ResponseCallBack() {
-                                    
+                                Member self = raftMemberManager.getSelf();
+                                connection.request(new HeartbeatRequest(self.getTerm(), self.getLogId()),
+                                        2000, new ResponseCallBack() {
+                                
                                     @Override
                                     public void onSuccess(Response response) {
                                         member.setStatus(NodeStatus.UP);
-                                        refreshActiveTime(member.getMemberId());
                                         countDownLatch.countDown();
                                     }
-                                    
+                                
                                     @Override
                                     public void onFail(Exception e) {
-                                        // remove connection
                                         member.setStatus(NodeStatus.DOWN);
                                         countDownLatch.countDown();
                                     }
-    
+                                
                                     @Override
                                     public void onTimeout() {
                                         countDownLatch.countDown();
                                     }
+                                
                                 });
                             }
                         }
@@ -91,19 +99,11 @@ public class GrpcConnectionManager implements ConnectionManager {
                 // help gc
                 allMember = null;
                 // wait for response
-                countDownLatch.await(2000L, TimeUnit.MILLISECONDS);
-            } catch (Exception e) {
-                // nothing to do
-                e.printStackTrace();
+                countDownLatch.await(3000L, TimeUnit.MILLISECONDS);
             }
-        };
-        int random = new Random().nextInt(raftConfig.getHeartInterval() / 2);
-        // submit job
-        executor.scheduleAtFixedRate(job, raftConfig.getHeartInterval() + random, random, TimeUnit.MICROSECONDS);
-    }
-    
-    @Override
-    public void refreshActiveTime(String id) {
-        raftMemberManager.refreshMemberActive(id);
+        } catch (Exception e) {
+            // nothing to do
+            e.printStackTrace();
+        }
     }
 }

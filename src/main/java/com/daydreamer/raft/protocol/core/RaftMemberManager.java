@@ -24,6 +24,7 @@ public interface RaftMemberManager {
     
     /**
      * get all normal members
+     * it is valid if current node is leader
      *
      * @return normal members
      */
@@ -54,9 +55,9 @@ public interface RaftMemberManager {
     Member getMemberById(String id);
     
     /**
-     * refresh active time
+     * whether current node is leader
      *
-     * @param id member id
+     * @return whether current node is leader
      */
-    void refreshMemberActive(String id);
+    boolean isLeader();
 }

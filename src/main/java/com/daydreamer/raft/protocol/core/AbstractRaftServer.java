@@ -1,16 +1,24 @@
 package com.daydreamer.raft.protocol.core;
 
+import com.daydreamer.raft.protocol.constant.NodeRole;
+import com.daydreamer.raft.protocol.entity.Member;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
+import com.daydreamer.raft.protocol.handler.RequestHandler;
+import com.daydreamer.raft.protocol.handler.RequestHandlerHolder;
 import com.daydreamer.raft.transport.connection.Closeable;
+import com.daydreamer.raft.transport.entity.request.HeartbeatRequest;
+import com.daydreamer.raft.transport.entity.response.HeartbeatResponse;
 import com.sun.org.slf4j.internal.Logger;
 import com.sun.org.slf4j.internal.LoggerFactory;
 
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * @author Daydreamer
@@ -26,8 +34,17 @@ public abstract class AbstractRaftServer implements Closeable {
     
     /**
      * last time when leader active
+     *
+     * update if current node is follower and receive leader heartbeat
      */
-    protected long leaderLastActiveTime;
+    protected volatile long leaderLastActiveTime;
+    
+    /**
+     * to be candidate start time
+     *
+     * update if current node is follower and receive other node vote request
+     */
+    protected volatile long beCandidateStartTime;
     
     /**
      * raft config
@@ -58,6 +75,23 @@ public abstract class AbstractRaftServer implements Closeable {
         try {
             // start server
             doStartServer();
+            // register heart beat request handler
+            RequestHandlerHolder.register(new RequestHandler<HeartbeatRequest, HeartbeatResponse>() {
+                
+                @Override
+                public HeartbeatResponse handle(HeartbeatRequest request) {
+                    // renew
+                    refreshLeaderActive();
+                    return new HeartbeatResponse();
+                }
+    
+                @Override
+                public Class<HeartbeatRequest> getSource() {
+                    return HeartbeatRequest.class;
+                }
+            });
+            // init job to vote
+            initAskVoteLeaderJob();
         } catch (Exception e) {
             throw new IllegalStateException("Fail to start raft server, because " + e.getLocalizedMessage());
         }
@@ -77,16 +111,29 @@ public abstract class AbstractRaftServer implements Closeable {
      *
      * @throws Exception
      */
-    private void askVoteLeader() {
+    private void initAskVoteLeaderJob() {
         executorService.execute(() -> {
             try {
                 while (true) {
+                    // wait a random time
+                    int waitTime = raftConfig.getVoteBaseTime() + new Random().nextInt(raftConfig.getVoteBaseTime() / 2);
+                    LockSupport.parkNanos(TimeUnit.MICROSECONDS.toNanos(waitTime));
                     // No election will be held if the following conditions are met:
-                    // if current node is leader
-                    // if cluster has leader base on normalCluster variable
-                    if (!(isLeader() || System.currentTimeMillis() - leaderLastActiveTime > raftConfig.getAbnormalActiveInterval())) {
-                        normalCluster.compareAndSet(false, true);
-                        requestVote();
+                    //   if current node is leader
+                    //   if cluster has leader base on leaderLastActiveTime variable
+                    //   if current node receive a vote request from other in this term
+                    if (isLeader()) {
+                        continue;
+                    }
+                    boolean leaderHeartbeatTimeout = NodeRole.FOLLOWER.equals(getSelf().getRole()) && System.currentTimeMillis() - leaderLastActiveTime > raftConfig.getAbnormalActiveInterval();
+                    boolean candidateWaitTimeout = NodeRole.CANDIDATE.equals(getSelf().getRole()) && System.currentTimeMillis() - beCandidateStartTime > raftConfig.getCandidateStatusTimeout();
+                    if (leaderHeartbeatTimeout || candidateWaitTimeout) {
+                        // return the val whether don't need to allow to vote again
+                        // current may be leader
+                        if (requestVote()) {
+                            getSelf().setRole(NodeRole.LEADER);
+                            normalCluster.compareAndSet(false, true);
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -94,6 +141,13 @@ public abstract class AbstractRaftServer implements Closeable {
             }
         });
     }
+    
+    /**
+     * get self
+     *
+     * @return self
+     */
+    protected abstract Member getSelf();
     
     /**
      * start server
@@ -104,8 +158,9 @@ public abstract class AbstractRaftServer implements Closeable {
      * request for leader
      *
      * @return whether current node being leader
+     * @throws Exception
      */
-    public abstract boolean requestVote();
+    public abstract boolean requestVote() throws Exception;
     
     /**
      * whether current node is leader

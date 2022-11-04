@@ -6,20 +6,60 @@ import java.util.List;
  * @author Daydreamer
  * <p>
  * config about raft
+ *
+ * voteBaseTime + ramdom() < heartInterval < abnormalActiveInterval
  */
 public class RaftConfig {
     
+    /**
+     * member ip exclude current node
+     */
     private List<String> memberAddresses;
     
-    private int heartInterval = 5000;
+    /**
+     * current node will tell follower to keep if current node is leader and timeout
+     */
+    private int heartInterval = 1000;
     
+    /**
+     * server port
+     */
     private int port = 10089;
     
-    private int abnormalActiveInterval = 2000;
+    /**
+     * current node will ask votes if timeout
+     */
+    private int abnormalActiveInterval = 6000;
+    
+    /**
+     * base interval between two elections
+     */
+    private int voteBaseTime = 5000;
+    
+    /**
+     * base wait time in candidate
+     */
+    private int candidateStatusTimeout = 5000;
     
     static {
         // TODO 动态加载配置
         
+    }
+    
+    public int getCandidateStatusTimeout() {
+        return candidateStatusTimeout;
+    }
+    
+    public void setCandidateStatusTimeout(int candidateStatusTimeout) {
+        this.candidateStatusTimeout = candidateStatusTimeout;
+    }
+    
+    public int getVoteBaseTime() {
+        return voteBaseTime;
+    }
+    
+    public void setVoteBaseTime(int voteBaseTime) {
+        this.voteBaseTime = voteBaseTime;
     }
     
     public int getAbnormalActiveInterval() {

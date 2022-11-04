@@ -3,6 +3,9 @@ package com.daydreamer.raft.protocol.entity;
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.constant.NodeStatus;
 import com.daydreamer.raft.transport.connection.Connection;
+
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -40,12 +43,12 @@ public class Member {
     /**
      * term of member
      */
-    private int term;
+    private AtomicInteger term = new AtomicInteger(0);
     
     /**
      * id in term
      */
-    private int logId;
+    private AtomicLong logId = new AtomicLong(0);
     
     /**
      * role
@@ -61,6 +64,14 @@ public class Member {
      * conn
      */
     private Connection connection;
+    
+    public void setTerm(int term) {
+        this.term.set(term);
+    }
+    
+    public void setLogId(long logId) {
+        this.logId.set(logId);
+    }
     
     public long getLastActiveTime() {
         return lastActiveTime;
@@ -111,19 +122,19 @@ public class Member {
     }
     
     public int getTerm() {
-        return term;
+        return term.get();
     }
     
-    public void setTerm(int term) {
-        this.term = term;
+    public void increaseTerm() {
+        this.term.incrementAndGet();
     }
     
-    public int getLogId() {
-        return logId;
+    public long getLogId() {
+        return logId.get();
     }
     
-    public void setLogId(int logId) {
-        this.logId = logId;
+    public void increaseLogId() {
+        this.logId.incrementAndGet();
     }
     
     public String getIp() {

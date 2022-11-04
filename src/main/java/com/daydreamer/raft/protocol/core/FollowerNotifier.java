@@ -1,13 +1,11 @@
 package com.daydreamer.raft.protocol.core;
 
-import com.daydreamer.raft.transport.connection.Connection;
-
 /**
  * @author Daydreamer
  * <p>
  * It is a manager to retain connection
  */
-public interface ConnectionManager {
+public interface FollowerNotifier {
     
     /**
      * init
@@ -15,9 +13,8 @@ public interface ConnectionManager {
     void init();
     
     /**
-     * refresh active time
+     * remind follower to keep current node as leader
      *
-     * @param id conn id
      */
-    void refreshActiveTime(String id);
+    void keepFollowers();
 }
