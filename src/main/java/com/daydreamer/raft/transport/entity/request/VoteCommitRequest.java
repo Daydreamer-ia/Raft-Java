@@ -5,20 +5,20 @@ import com.daydreamer.raft.transport.entity.Request;
 /**
  * @author Daydreamer
  *
- * request to vote
+ * if success to get half of all, then commit and tell follower
  */
-public class VoteRequest extends Request {
+public class VoteCommitRequest extends Request {
     
     private int term;
     
-    private long logIndex;
+    private long logId;
     
-    public VoteRequest() {
+    public VoteCommitRequest() {
     }
     
-    public VoteRequest(int term, long logIndex) {
+    public VoteCommitRequest(int term, long logId) {
         this.term = term;
-        this.logIndex = logIndex;
+        this.logId = logId;
     }
     
     public int getTerm() {
@@ -29,11 +29,11 @@ public class VoteRequest extends Request {
         this.term = term;
     }
     
-    public long getLogIndex() {
-        return logIndex;
+    public long getLogId() {
+        return logId;
     }
     
-    public void setLogIndex(long logIndex) {
-        this.logIndex = logIndex;
+    public void setLogId(long logId) {
+        this.logId = logId;
     }
 }

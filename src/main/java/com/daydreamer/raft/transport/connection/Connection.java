@@ -9,7 +9,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * @author Daydreamer
  */
-public abstract class Connection {
+public abstract class Connection implements Closeable {
     
     private String id;
     
@@ -42,4 +42,23 @@ public abstract class Connection {
      * @return future
      */
     public abstract Future<Response> request(Request request) throws Exception;
+    
+    /**
+     * call back allow if response
+     *
+     * @param request request
+     * @param timeout timeout
+     * @param callBack call back
+     * @throws Exception exception
+     */
+    public abstract void request(Request request, long timeout, ResponseCallBack callBack) throws Exception;
+    
+    /**
+     * call back allow if response
+     *
+     * @param request request
+     * @param callBack call back
+     * @throws Exception exception
+     */
+    public abstract void request(Request request, ResponseCallBack callBack) throws Exception;
 }

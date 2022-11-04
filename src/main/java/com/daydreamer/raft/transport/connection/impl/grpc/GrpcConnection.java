@@ -1,14 +1,14 @@
 package com.daydreamer.raft.transport.connection.impl.grpc;
 
-import com.daydreamer.raft.common.MsgUtils;
+import com.daydreamer.raft.common.entity.SimpleFuture;
+import com.daydreamer.raft.common.utils.MsgUtils;
 import com.daydreamer.raft.transport.connection.Connection;
+import com.daydreamer.raft.transport.connection.ResponseCallBack;
 import com.daydreamer.raft.transport.entity.Request;
 import com.daydreamer.raft.transport.entity.Response;
 import com.daydreamer.raft.transport.grpc.Message;
 import com.daydreamer.raft.transport.grpc.RequesterGrpc;
-import com.google.common.util.concurrent.ListenableFuture;
 import io.grpc.ManagedChannel;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -18,63 +18,84 @@ import java.util.concurrent.TimeoutException;
  * <p>
  * client to request
  */
-public class GrpcConnection extends Connection implements AutoCloseable {
+public class GrpcConnection extends Connection {
     
-    private RequesterGrpc.RequesterFutureStub requesterFutureStub;
+    private RequesterGrpc.RequesterBlockingStub requesterBlockingStub;
     
-    public GrpcConnection(String id, RequesterGrpc.RequesterFutureStub requesterFutureStub) {
+    public GrpcConnection(String id, RequesterGrpc.RequesterBlockingStub requesterFutureStub) {
         super(id);
-        this.requesterFutureStub = requesterFutureStub;
+        this.requesterBlockingStub = requesterFutureStub;
     }
     
     @Override
-    public Response request(Request request, long timeout) throws TimeoutException {
+    public Response request(Request request, long timeout) throws Exception {
         Message msg = MsgUtils.convertMsg(request);
-        ListenableFuture<Message> future = requesterFutureStub.request(msg);
-        Message responseMsg = null;
+        SimpleFuture<Response> responseFuture = new SimpleFuture<>(() -> {
+            Message responseMsg = requesterBlockingStub.request(msg);
+            return MsgUtils.convertResponse(responseMsg);
+        });
         try {
-            responseMsg = future.get(timeout, TimeUnit.MICROSECONDS);
+            Response response = responseFuture.get(timeout, TimeUnit.MICROSECONDS);
+            if (response != null) {
+                return response;
+            } else {
+                throw new TimeoutException();
+            }
+        } catch (InterruptedException e) {
+            // nothing to do
         } catch (Exception e) {
-            throw new TimeoutException();
+            throw responseFuture.getException();
         }
-        return MsgUtils.convertResponse(responseMsg);
+        return null;
     }
     
     @Override
     public Future<Response> request(Request request) {
         Message msg = MsgUtils.convertMsg(request);
-        ListenableFuture<Message> future = requesterFutureStub.request(msg);
-        return new Future<Response>() {
-            @Override
-            public boolean cancel(boolean mayInterruptIfRunning) {
-                throw new UnsupportedOperationException();
-            }
-            
-            @Override
-            public boolean isCancelled() {
-                throw new UnsupportedOperationException();
-            }
-            
-            @Override
-            public boolean isDone() {
-                throw new UnsupportedOperationException();
-            }
-            
-            @Override
-            public Response get() throws InterruptedException, ExecutionException {
-                return MsgUtils.convertResponse(future.get());
-            }
-            
-            @Override
-            public Response get(long timeout, TimeUnit unit)
-                    throws InterruptedException, ExecutionException, TimeoutException {
-                return MsgUtils.convertResponse(future.get(timeout, unit));
-            }
-        };
+        return new SimpleFuture<>(() -> {
+            Message responseMsg = requesterBlockingStub.request(msg);
+            return MsgUtils.convertResponse(responseMsg);
+        });
     }
     
     @Override
-    public void close() throws Exception {
-        ((ManagedChannel) requesterFutureStub.getChannel()).awaitTermination(100, TimeUnit.MICROSECONDS);
+    public void request(Request request, long timeout, ResponseCallBack callBack) {
+        new SimpleFuture<>(() -> {
+            Response result = null;
+            try {
+                Future<Response> future = request(request);
+                Response response = future.get(timeout, TimeUnit.MICROSECONDS);
+                callBack.onSuccess(response);
+            } catch (TimeoutException te) {
+                callBack.onTimeout();
+            } catch (Exception e) {
+                callBack.onFail(e);
+            }
+            return result;
+        });
+    }
+    
+    @Override
+    public void request(Request request, ResponseCallBack callBack) throws Exception {
+        new SimpleFuture<>(() -> {
+            Response result = null;
+            try {
+                Message responseMsg = requesterBlockingStub.request(MsgUtils.convertMsg(request));
+                callBack.onSuccess(MsgUtils.convertResponse(responseMsg));
+            } catch (Exception e) {
+                callBack.onFail(e);
+            }
+            return result;
+        });
+    }
+    
+    @Override
+    public void close() {
+        try {
+            ((ManagedChannel) requesterBlockingStub.getChannel()).awaitTermination(100, TimeUnit.MICROSECONDS);
+        } catch (InterruptedException e) {
+            // nothing to do
+            e.printStackTrace();
+        }
     }
 }
