@@ -5,6 +5,11 @@ import com.daydreamer.raft.protocol.constant.NodeStatus;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.entity.Member;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
+import com.daydreamer.raft.transport.connection.Connection;
+import com.daydreamer.raft.transport.connection.impl.grpc.GrpcConnection;
+import com.daydreamer.raft.transport.grpc.RequesterGrpc;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -29,8 +34,6 @@ public class MemberManager implements RaftMemberManager {
     
     public MemberManager(RaftConfig raftConfig) {
         this.raftConfig = raftConfig;
-        // init
-        init();
     }
     
     /**
@@ -74,6 +77,26 @@ public class MemberManager implements RaftMemberManager {
             }
             members.add(member);
         }
+        // create connection
+        for (Member member : members) {
+            member.setConnection(createConnection(member));
+        }
+    }
+    
+    /**
+     * create connection
+     *
+     * @param member target host
+     * @return conn
+     */
+    private Connection createConnection(Member member) {
+        //初始化连接
+        ManagedChannel channel = ManagedChannelBuilder.forAddress(member.getIp(), member.getPort())
+                .usePlaintext()
+                .build();
+        //初始化远程服务Stub
+        RequesterGrpc.RequesterBlockingStub blockingStub = RequesterGrpc.newBlockingStub(channel);
+        return new GrpcConnection(member.getAddress(), blockingStub);
     }
     
     @Override

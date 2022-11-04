@@ -31,12 +31,12 @@ public class RaftConfig {
     /**
      * current node will ask votes if timeout
      */
-    private int abnormalActiveInterval = 6000;
+    private int abnormalActiveInterval = 10000;
     
     /**
      * base interval between two elections
      */
-    private int voteBaseTime = 5000;
+    private int voteBaseTime = 3000;
     
     /**
      * base wait time in candidate

@@ -52,4 +52,13 @@ public abstract class Connection implements Closeable {
      * @throws Exception exception
      */
     public abstract void request(Request request, long timeout, ResponseCallBack callBack) throws Exception;
+    
+    /**
+     * call back allow if response
+     *
+     * @param request request
+     * @param callBack call back
+     * @throws Exception exception
+     */
+    public abstract void request(Request request, ResponseCallBack callBack) throws Exception;
 }

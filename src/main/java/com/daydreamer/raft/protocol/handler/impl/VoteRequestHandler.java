@@ -44,7 +44,7 @@ public class VoteRequestHandler implements RequestHandler<VoteRequest, VoteRespo
             return new VoteResponse(false);
         }
         // refresh candidate active time
-        raftServer.refreshLeaderActive();
+        raftServer.refreshCandidateActive();
         raftServer.refreshLastVotedTerm(request.getTerm());
         return new VoteResponse(true);
     }

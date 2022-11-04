@@ -64,6 +64,11 @@ public abstract class AbstractRaftServer implements Closeable {
     protected FollowerNotifier followerNotifier;
     
     /**
+     * last time voted
+     */
+    private volatile long lastVotedTime;
+    
+    /**
      * vote executor
      */
     private ExecutorService executorService = new ThreadPoolExecutor(1, 1, 1000, TimeUnit.MICROSECONDS, new LinkedBlockingQueue<>(), new ThreadFactory() {
@@ -90,6 +95,8 @@ public abstract class AbstractRaftServer implements Closeable {
         try {
             // init request handler
             RequestHandlerHolder.init(raftMemberManager, followerNotifier, this);
+            // init member manager
+            raftMemberManager.init();
             // start server
             doStartServer();
             // init job to vote
@@ -119,7 +126,7 @@ public abstract class AbstractRaftServer implements Closeable {
                 while (true) {
                     // wait a random time
                     int waitTime = raftConfig.getVoteBaseTime() + new Random().nextInt(raftConfig.getVoteBaseTime() / 2);
-                    LockSupport.parkNanos(TimeUnit.MICROSECONDS.toNanos(waitTime));
+                    Thread.sleep(waitTime);
                     // No election will be held if the following conditions are met:
                     //   if current node is leader
                     //   if cluster has leader base on leaderLastActiveTime variable
@@ -127,7 +134,9 @@ public abstract class AbstractRaftServer implements Closeable {
                     if (isLeader()) {
                         continue;
                     }
+                    // if follower and timeout
                     boolean leaderHeartbeatTimeout = NodeRole.FOLLOWER.equals(getSelf().getRole()) && System.currentTimeMillis() - leaderLastActiveTime > raftConfig.getAbnormalActiveInterval();
+                    // if candidate and timeout
                     boolean candidateWaitTimeout = NodeRole.CANDIDATE.equals(getSelf().getRole()) && System.currentTimeMillis() - beCandidateStartTime > raftConfig.getCandidateStatusTimeout();
                     if (leaderHeartbeatTimeout || candidateWaitTimeout) {
                         // return the val whether don't need to allow to vote again
@@ -135,7 +144,9 @@ public abstract class AbstractRaftServer implements Closeable {
                         if (requestVote()) {
                             getSelf().setRole(NodeRole.LEADER);
                             normalCluster.compareAndSet(false, true);
+                            LOGGER.info("[AbstractRaftServer] - Server node has been leader!");
                         }
+                        lastVotedTime = System.currentTimeMillis();
                     }
                 }
             } catch (Exception e) {

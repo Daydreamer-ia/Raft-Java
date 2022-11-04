@@ -76,6 +76,20 @@ public class GrpcConnection extends Connection {
     }
     
     @Override
+    public void request(Request request, ResponseCallBack callBack) throws Exception {
+        new SimpleFuture<>(() -> {
+            Response result = null;
+            try {
+                Message responseMsg = requesterBlockingStub.request(MsgUtils.convertMsg(request));
+                callBack.onSuccess(MsgUtils.convertResponse(responseMsg));
+            } catch (Exception e) {
+                callBack.onFail(e);
+            }
+            return result;
+        });
+    }
+    
+    @Override
     public void close() {
         try {
             ((ManagedChannel) requesterBlockingStub.getChannel()).awaitTermination(100, TimeUnit.MICROSECONDS);

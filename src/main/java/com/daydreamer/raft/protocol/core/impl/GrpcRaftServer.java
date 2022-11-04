@@ -99,14 +99,12 @@ public class GrpcRaftServer extends AbstractRaftServer {
         for (Member member : members) {
             try {
                 Connection connection = member.getConnection();
-                connection.request(request, 3000L, new ResponseCallBack() {
+                connection.request(request, new ResponseCallBack() {
                 
                     @Override
                     public void onSuccess(Response response) {
                         if (response instanceof VoteResponse) {
-                            if (predicate.test(response)) {
-                                count.incrementAndGet();
-                            }
+                            count.incrementAndGet();
                         }
                         countDownLatch.countDown();
                     }
@@ -120,14 +118,14 @@ public class GrpcRaftServer extends AbstractRaftServer {
                     @Override
                     public void onTimeout() {
                         // nothing to do
-                        countDownLatch.countDown();
                     }
                 });
             } catch (Exception e) {
                 // nothing to do
+                e.printStackTrace();
             }
         }
-        countDownLatch.await(3000, TimeUnit.MICROSECONDS);
+        countDownLatch.await(5000L, TimeUnit.MICROSECONDS);
         return count.get() > (members.size() + 1) / 2;
     }
     
