@@ -36,9 +36,9 @@ public class GrpcRaftServer extends AbstractRaftServer {
      */
     private Server server;
     
-    public GrpcRaftServer(RaftConfig raftConfig, RaftMemberManager raftMemberManager,
+    public GrpcRaftServer(String raftConfigPath, RaftMemberManager raftMemberManager,
             FollowerNotifier followerNotifier) {
-        super(raftConfig, raftMemberManager, followerNotifier);
+        super(new RaftPropertiesReader(raftConfigPath), raftMemberManager, followerNotifier);
     }
     
     @Override
@@ -103,9 +103,8 @@ public class GrpcRaftServer extends AbstractRaftServer {
                 
                     @Override
                     public void onSuccess(Response response) {
-                        if (response instanceof VoteResponse) {
-                            count.incrementAndGet();
-                        }
+                        count.incrementAndGet();
+                        System.out.println("在 term = " + raftMemberManager.getSelf().getTerm() + "获得1票");
                         countDownLatch.countDown();
                     }
                 
@@ -125,7 +124,8 @@ public class GrpcRaftServer extends AbstractRaftServer {
                 e.printStackTrace();
             }
         }
-        countDownLatch.await(5000L, TimeUnit.MICROSECONDS);
+        countDownLatch.await(members.size() * 1500, TimeUnit.MICROSECONDS);
+        System.out.println("在 term = " + raftMemberManager.getSelf().getTerm() + "获得" + count.get() + "票");
         return count.get() > (members.size() + 1) / 2;
     }
     

@@ -1,9 +1,9 @@
 package com.daydreamer.raft.protocol.core;
 
 import com.daydreamer.raft.protocol.constant.NodeRole;
+import com.daydreamer.raft.protocol.core.impl.RaftPropertiesReader;
 import com.daydreamer.raft.protocol.entity.Member;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
-import com.daydreamer.raft.protocol.handler.RequestHandler;
 import com.daydreamer.raft.protocol.handler.RequestHandlerHolder;
 import com.daydreamer.raft.transport.connection.Closeable;
 
@@ -14,7 +14,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.LockSupport;
 import java.util.logging.Logger;
 
 /**
@@ -64,9 +63,9 @@ public abstract class AbstractRaftServer implements Closeable {
     protected FollowerNotifier followerNotifier;
     
     /**
-     * last time voted
+     * raft properties
      */
-    private volatile long lastVotedTime;
+    private RaftPropertiesReader raftPropertiesReader;
     
     /**
      * vote executor
@@ -81,11 +80,12 @@ public abstract class AbstractRaftServer implements Closeable {
         }
     });
     
-    public AbstractRaftServer(RaftConfig raftConfig, RaftMemberManager raftMemberManager,
+    public AbstractRaftServer(RaftPropertiesReader raftPropertiesReader, RaftMemberManager raftMemberManager,
             FollowerNotifier followerNotifier) {
-        this.raftConfig = raftConfig;
+        this.raftPropertiesReader = raftPropertiesReader;
         this.raftMemberManager = raftMemberManager;
         this.followerNotifier = followerNotifier;
+        this.raftConfig = raftPropertiesReader.getProperties();
     }
     
     /**
@@ -102,6 +102,7 @@ public abstract class AbstractRaftServer implements Closeable {
             // init job to vote
             initAskVoteLeaderJob();
         } catch (Exception e) {
+            e.printStackTrace();
             throw new IllegalStateException("Fail to start raft server, because " + e.getLocalizedMessage());
         }
     }
@@ -132,6 +133,7 @@ public abstract class AbstractRaftServer implements Closeable {
                     //   if cluster has leader base on leaderLastActiveTime variable
                     //   if current node receive a vote request from other in this term
                     if (isLeader()) {
+                        LOGGER.info("[AbstractRaftServer] - Current node is leader, member: " + raftMemberManager.getSelf().getIp());
                         continue;
                     }
                     // if follower and timeout
@@ -144,9 +146,8 @@ public abstract class AbstractRaftServer implements Closeable {
                         if (requestVote()) {
                             getSelf().setRole(NodeRole.LEADER);
                             normalCluster.compareAndSet(false, true);
-                            LOGGER.info("[AbstractRaftServer] - Server node has been leader!");
+                            LOGGER.info("[AbstractRaftServer] - Server node has been leader, member: " + raftMemberManager.getSelf().getAddress());
                         }
-                        lastVotedTime = System.currentTimeMillis();
                     }
                 }
             } catch (Exception e) {

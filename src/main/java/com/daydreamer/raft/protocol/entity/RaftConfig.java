@@ -1,8 +1,8 @@
 package com.daydreamer.raft.protocol.entity;
 
+import com.daydreamer.raft.common.service.ActiveProperties;
+
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author Daydreamer
@@ -11,12 +11,12 @@ import java.util.stream.Stream;
  *
  * voteBaseTime + ramdom() < heartInterval < abnormalActiveInterval
  */
-public class RaftConfig {
+public class RaftConfig implements ActiveProperties {
     
     /**
      * member ip exclude current node
      */
-    private List<String> memberAddresses = Stream.of("127.0.0.1:8999", "127.0.0.1:9999").collect(Collectors.toList());
+    private List<String> memberAddresses;
     
     /**
      * current node will tell follower to keep if current node is leader and timeout
@@ -26,7 +26,7 @@ public class RaftConfig {
     /**
      * server port
      */
-    private int port = 10089;
+    private int port = 0;
     
     /**
      * current node will ask votes if timeout
@@ -42,11 +42,6 @@ public class RaftConfig {
      * base wait time in candidate
      */
     private int candidateStatusTimeout = 5000;
-    
-    static {
-        // TODO 动态加载配置
-        
-    }
     
     public int getCandidateStatusTimeout() {
         return candidateStatusTimeout;
