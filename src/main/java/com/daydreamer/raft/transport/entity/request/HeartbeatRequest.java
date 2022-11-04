@@ -9,11 +9,11 @@ import com.daydreamer.raft.transport.entity.Request;
  */
 public class HeartbeatRequest extends Request {
     
-    private long term;
+    private int term;
     
     private long logId;
     
-    public HeartbeatRequest(long term, long logId) {
+    public HeartbeatRequest(int term, long logId) {
         this.term = term;
         this.logId = logId;
     }
@@ -26,11 +26,11 @@ public class HeartbeatRequest extends Request {
         this.logId = logId;
     }
     
-    public long getTerm() {
+    public int getTerm() {
         return term;
     }
     
-    public void setTerm(long term) {
+    public void setTerm(int term) {
         this.term = term;
     }
 }

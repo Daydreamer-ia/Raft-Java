@@ -1,6 +1,8 @@
 package com.daydreamer.raft.protocol.entity;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Daydreamer
@@ -14,7 +16,7 @@ public class RaftConfig {
     /**
      * member ip exclude current node
      */
-    private List<String> memberAddresses;
+    private List<String> memberAddresses = Stream.of("127.0.0.1:8999", "127.0.0.1:9999").collect(Collectors.toList());
     
     /**
      * current node will tell follower to keep if current node is leader and timeout

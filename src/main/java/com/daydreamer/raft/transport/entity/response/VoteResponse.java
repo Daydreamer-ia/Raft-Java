@@ -18,6 +18,14 @@ public class VoteResponse extends Response {
         this.isVoted = isVoted;
     }
     
+    public boolean isVoted() {
+        return isVoted;
+    }
+    
+    public void setVoted(boolean voted) {
+        isVoted = voted;
+    }
+    
     @Override
     public String toString() {
         return "VoteResponse{" + "isVoted=" + isVoted + '}';

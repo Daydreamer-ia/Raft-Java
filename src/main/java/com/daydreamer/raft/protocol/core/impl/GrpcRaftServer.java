@@ -13,8 +13,6 @@ import com.daydreamer.raft.transport.entity.Response;
 import com.daydreamer.raft.transport.entity.request.VoteCommitRequest;
 import com.daydreamer.raft.transport.entity.request.VoteRequest;
 import com.daydreamer.raft.transport.entity.response.VoteResponse;
-import com.sun.org.slf4j.internal.Logger;
-import com.sun.org.slf4j.internal.LoggerFactory;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
@@ -22,38 +20,28 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
+import java.util.logging.Logger;
 
 /**
  * @author Daydreamer
  */
 public class GrpcRaftServer extends AbstractRaftServer {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(GrpcRaftServer.class);
+    private static final Logger LOGGER = Logger.getLogger(GrpcRaftServer.class.getSimpleName());
     
     /**
      * server
      */
     private Server server;
     
-    /**
-     * raft member manager
-     */
-    private RaftMemberManager raftMemberManager;
-    
-    /**
-     * notify followers if current node is leader
-     */
-    private FollowerNotifier followerNotifier;
-    
     public GrpcRaftServer(RaftConfig raftConfig, RaftMemberManager raftMemberManager,
             FollowerNotifier followerNotifier) {
-        super(raftConfig);
-        this.raftMemberManager = raftMemberManager;
-        this.followerNotifier = followerNotifier;
+        super(raftConfig, raftMemberManager, followerNotifier);
     }
     
     @Override
-    protected Member getSelf() {
+    public Member getSelf() {
         return raftMemberManager.getSelf();
     }
     
@@ -62,12 +50,12 @@ public class GrpcRaftServer extends AbstractRaftServer {
         try {
             int port = raftConfig.getPort();
             server = ServerBuilder.forPort(port).addService(new GrpcRequestServerCore()).build().start();
-            LOGGER.trace("[GrpcRaftServer] - Server started, listening on port: " + port);
+            LOGGER.info("[GrpcRaftServer] - Server started, listening on port: " + port);
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 // Use stderr here since the logger may have been reset by its JVM shutdown hook.
-                LOGGER.trace("[GrpcRaftServer] - shutting down gRPC server since JVM is shutting down...");
+                LOGGER.info("[GrpcRaftServer] - shutting down gRPC server since JVM is shutting down...");
                 this.close();
-                LOGGER.trace("[GrpcRaftServer] - server shut down");
+                LOGGER.info("[GrpcRaftServer] - server shut down");
             }));
             // init
             followerNotifier.init();
@@ -84,10 +72,16 @@ public class GrpcRaftServer extends AbstractRaftServer {
         self.increaseTerm();
         // if success half of all
         // then commit
-        if (!batchRequestMembers(new VoteRequest(self.getTerm(), self.getLogId()))) {
+        if (!batchRequestMembers(new VoteRequest(self.getTerm(), self.getLogId()), response -> {
+            // nothing to do
+            return ((VoteResponse) response).isVoted();
+        })) {
             return false;
         }
-        return batchRequestMembers(new VoteCommitRequest(self.getTerm(), self.getLogId()));
+        return batchRequestMembers(new VoteCommitRequest(self.getTerm(), self.getLogId()), response -> {
+            // nothing to do
+            return true;
+        });
     }
     
     /**
@@ -96,7 +90,7 @@ public class GrpcRaftServer extends AbstractRaftServer {
      * @param request request
      * @return whether success half of all
      */
-    private boolean batchRequestMembers(Request request) throws Exception {
+    private boolean batchRequestMembers(Request request, Predicate<Response> predicate) throws Exception {
         List<Member> members = raftMemberManager.getAllMember();
         // begin to request
         AtomicInteger count = new AtomicInteger(1);
@@ -109,7 +103,9 @@ public class GrpcRaftServer extends AbstractRaftServer {
                     @Override
                     public void onSuccess(Response response) {
                         if (response instanceof VoteResponse) {
-                            count.incrementAndGet();
+                            if (predicate.test(response)) {
+                                count.incrementAndGet();
+                            }
                         }
                         countDownLatch.countDown();
                     }

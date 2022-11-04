@@ -53,12 +53,12 @@ public class Member {
     /**
      * role
      */
-    private AtomicReference<NodeRole> role;
+    private AtomicReference<NodeRole> role = new AtomicReference<>(NodeRole.FOLLOWER);
     
     /**
      * healthy or not
      */
-    private AtomicReference<NodeStatus> status;
+    private AtomicReference<NodeStatus> status = new AtomicReference<>(NodeStatus.DOWN);
     
     /**
      * conn

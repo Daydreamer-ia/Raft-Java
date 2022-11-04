@@ -6,10 +6,6 @@ import com.daydreamer.raft.protocol.entity.RaftConfig;
 import com.daydreamer.raft.protocol.handler.RequestHandler;
 import com.daydreamer.raft.protocol.handler.RequestHandlerHolder;
 import com.daydreamer.raft.transport.connection.Closeable;
-import com.daydreamer.raft.transport.entity.request.HeartbeatRequest;
-import com.daydreamer.raft.transport.entity.response.HeartbeatResponse;
-import com.sun.org.slf4j.internal.Logger;
-import com.sun.org.slf4j.internal.LoggerFactory;
 
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
@@ -19,13 +15,14 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
+import java.util.logging.Logger;
 
 /**
  * @author Daydreamer
  */
 public abstract class AbstractRaftServer implements Closeable {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRaftServer.class);
+    private static final Logger LOGGER = Logger.getLogger(AbstractRaftServer.class.getSimpleName());
     
     /**
      * if there is a leader in cluster
@@ -47,9 +44,24 @@ public abstract class AbstractRaftServer implements Closeable {
     protected volatile long beCandidateStartTime;
     
     /**
+     * last term current node has voted
+     */
+    private volatile int lastTermCurrentNodeHasVoted;
+    
+    /**
      * raft config
      */
     protected RaftConfig raftConfig;
+    
+    /**
+     * RaftMemberManager
+     */
+    protected RaftMemberManager raftMemberManager;
+    
+    /**
+     * FollowerNotifier
+     */
+    protected FollowerNotifier followerNotifier;
     
     /**
      * vote executor
@@ -64,8 +76,11 @@ public abstract class AbstractRaftServer implements Closeable {
         }
     });
     
-    public AbstractRaftServer(RaftConfig raftConfig) {
+    public AbstractRaftServer(RaftConfig raftConfig, RaftMemberManager raftMemberManager,
+            FollowerNotifier followerNotifier) {
         this.raftConfig = raftConfig;
+        this.raftMemberManager = raftMemberManager;
+        this.followerNotifier = followerNotifier;
     }
     
     /**
@@ -73,23 +88,10 @@ public abstract class AbstractRaftServer implements Closeable {
      */
     public void start() {
         try {
+            // init request handler
+            RequestHandlerHolder.init(raftMemberManager, followerNotifier, this);
             // start server
             doStartServer();
-            // register heart beat request handler
-            RequestHandlerHolder.register(new RequestHandler<HeartbeatRequest, HeartbeatResponse>() {
-                
-                @Override
-                public HeartbeatResponse handle(HeartbeatRequest request) {
-                    // renew
-                    refreshLeaderActive();
-                    return new HeartbeatResponse();
-                }
-    
-                @Override
-                public Class<HeartbeatRequest> getSource() {
-                    return HeartbeatRequest.class;
-                }
-            });
             // init job to vote
             initAskVoteLeaderJob();
         } catch (Exception e) {
@@ -137,7 +139,7 @@ public abstract class AbstractRaftServer implements Closeable {
                     }
                 }
             } catch (Exception e) {
-                LOGGER.error("[AbstractRaftServer] - Fail to do vote, because " + e.getLocalizedMessage());
+                LOGGER.severe("[AbstractRaftServer] - Fail to do vote, because " + e.getLocalizedMessage());
             }
         });
     }
@@ -147,7 +149,7 @@ public abstract class AbstractRaftServer implements Closeable {
      *
      * @return self
      */
-    protected abstract Member getSelf();
+    public abstract Member getSelf();
     
     /**
      * start server
@@ -160,7 +162,7 @@ public abstract class AbstractRaftServer implements Closeable {
      * @return whether current node being leader
      * @throws Exception
      */
-    public abstract boolean requestVote() throws Exception;
+    protected abstract boolean requestVote() throws Exception;
     
     /**
      * whether current node is leader
@@ -172,9 +174,35 @@ public abstract class AbstractRaftServer implements Closeable {
     /**
      * refresh if leader active
      */
-    public void refreshLeaderActive() {
+    public synchronized void refreshLeaderActive() {
+        raftMemberManager.getSelf().setRole(NodeRole.FOLLOWER);
         leaderLastActiveTime = System.currentTimeMillis();
-        normalCluster.compareAndSet(true, false);
+        normalCluster.compareAndSet(false, true);
     }
     
+    /**
+     * invoke if current node vote for other node
+     */
+    public synchronized void refreshCandidateActive() {
+        raftMemberManager.getSelf().setRole(NodeRole.CANDIDATE);
+        beCandidateStartTime = System.currentTimeMillis();
+    }
+    
+    /**
+     * refresh last voted term
+     *
+     * @param term term has voted
+     */
+    public synchronized void refreshLastVotedTerm(int term) {
+        lastTermCurrentNodeHasVoted = term;
+    }
+    
+    /**
+     * get last term has voted
+     *
+     * @return last term has voted
+     */
+    public int getLastTermCurrentNodeHasVoted() {
+        return lastTermCurrentNodeHasVoted;
+    }
 }
