@@ -4,7 +4,7 @@ package com.daydreamer.raft.protocol.handler;
 import com.daydreamer.raft.protocol.aware.RaftServerAware;
 import com.daydreamer.raft.protocol.aware.StorageRepositoryAware;
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
-import com.daydreamer.raft.protocol.core.FollowerNotifier;
+import com.daydreamer.raft.protocol.core.AbstractFollowerNotifier;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.aware.RaftMemberManagerAware;
 import com.daydreamer.raft.protocol.storage.StorageRepository;
@@ -40,8 +40,6 @@ public class RequestHandlerHolder {
     
     private static RaftMemberManager raftMemberManager;
     
-    private static FollowerNotifier followerNotifier;
-    
     private static AbstractRaftServer abstractRaftServer;
     
     private static StorageRepository storageRepository;
@@ -61,17 +59,17 @@ public class RequestHandlerHolder {
      * scan package and init
      *
      * @param raftMemberManager  raftMemberManager
-     * @param followerNotifier   followerNotifier
+     * @param storageRepository   storageRepository
      * @param abstractRaftServer abstractRaftServer
      */
-    public synchronized static void init(RaftMemberManager raftMemberManager, FollowerNotifier followerNotifier,
+    public synchronized static void init(RaftMemberManager raftMemberManager,
             AbstractRaftServer abstractRaftServer, StorageRepository storageRepository) {
         if (finishInit.get()) {
             return;
         }
         RequestHandlerHolder.raftMemberManager = raftMemberManager;
         RequestHandlerHolder.abstractRaftServer = abstractRaftServer;
-        RequestHandlerHolder.followerNotifier = followerNotifier;
+        RequestHandlerHolder.storageRepository = storageRepository;
         try {
             // load instance
             File file = new File(Objects.requireNonNull(RequestHandlerHolder.class

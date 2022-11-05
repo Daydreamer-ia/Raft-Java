@@ -5,6 +5,7 @@ import com.daydreamer.raft.protocol.core.AbstractRaftServer;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
 import com.daydreamer.raft.protocol.core.Protocol;
+import com.daydreamer.raft.protocol.storage.impl.MemoryLogRepository;
 
 /**
  * @author Daydreamer
@@ -18,11 +19,13 @@ public class RaftProtocol implements Protocol {
     private PropertiesReader<RaftConfig> raftConfigPropertiesReader;
     
     public RaftProtocol(String raftConfigPath) {
-        // init reader
+        // init reader, avoid gc
         raftConfigPropertiesReader = new RaftPropertiesReader(raftConfigPath);
         RaftMemberManager raftMemberManager = new MemberManager(raftConfigPropertiesReader.getProperties());
-        this.raftServer = new GrpcRaftServer(raftConfigPath,
-                raftMemberManager, new GrpcFollowerNotifier(raftMemberManager, raftConfigPropertiesReader.getProperties()));
+        // init server
+        this.raftServer = new GrpcRaftServer(raftConfigPropertiesReader.getProperties(),
+                raftMemberManager, new GrpcFollowerNotifier(raftMemberManager,
+                raftConfigPropertiesReader.getProperties()), new MemoryLogRepository());
     }
     
     @Override
