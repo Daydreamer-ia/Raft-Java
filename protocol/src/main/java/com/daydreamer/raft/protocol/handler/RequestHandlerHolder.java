@@ -12,12 +12,13 @@ import com.daydreamer.raft.api.entity.Response;
 
 import java.io.File;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Daydreamer
- *
+ * <p>
  * request handler registry
  */
 public class RequestHandlerHolder {
@@ -29,9 +30,11 @@ public class RequestHandlerHolder {
     
     private static final String HANDLER_PACKAGE = "com/daydreamer/raft/protocol/handler/impl";
     
-    private static final String CLASSPATH_PREFIX = "src/main/java/";
-    
     private static final String PACKAGE_SEPARATOR = ".";
+    
+    private static final String CLASS_FORMAT = ".class";
+    
+    private static final String EMPTY = "";
     
     private static RaftMemberManager raftMemberManager;
     
@@ -47,16 +50,18 @@ public class RequestHandlerHolder {
     /**
      * private constructor
      */
-    private RequestHandlerHolder() {}
+    private RequestHandlerHolder() {
+    }
     
     /**
      * scan package and init
      *
-     * @param raftMemberManager raftMemberManager
-     * @param followerNotifier followerNotifier
+     * @param raftMemberManager  raftMemberManager
+     * @param followerNotifier   followerNotifier
      * @param abstractRaftServer abstractRaftServer
      */
-    public synchronized static void init(RaftMemberManager raftMemberManager, FollowerNotifier followerNotifier,AbstractRaftServer abstractRaftServer) {
+    public synchronized static void init(RaftMemberManager raftMemberManager, FollowerNotifier followerNotifier,
+            AbstractRaftServer abstractRaftServer) {
         if (finishInit.get()) {
             return;
         }
@@ -65,13 +70,14 @@ public class RequestHandlerHolder {
         RequestHandlerHolder.followerNotifier = followerNotifier;
         try {
             // load instance
-            File file = new File(CLASSPATH_PREFIX + HANDLER_PACKAGE);
+            File file = new File(Objects.requireNonNull(RequestHandlerHolder.class
+                            .getClassLoader().getResource(HANDLER_PACKAGE)).getFile());
             File[] files = file.listFiles();
             String packagePrefix = HANDLER_PACKAGE.replaceAll("/", ".");
             if (files != null) {
                 // register no args constructor handler
                 for (File child : files) {
-                    String clazzName = packagePrefix + PACKAGE_SEPARATOR + child.getName().replace(".java", "");
+                    String clazzName = packagePrefix + PACKAGE_SEPARATOR + child.getName().replace(CLASS_FORMAT, EMPTY);
                     Class<?> clazz = Class.forName(clazzName);
                     RequestHandler<Request, Response> handler = (RequestHandler<Request, Response>) clazz.newInstance();
                     if (handler instanceof RaftMemberManagerAware) {

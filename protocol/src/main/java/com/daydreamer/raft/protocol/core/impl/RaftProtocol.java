@@ -15,12 +15,14 @@ public class RaftProtocol implements Protocol {
     
     private AbstractRaftServer raftServer;
     
+    private PropertiesReader<RaftConfig> raftConfigPropertiesReader;
+    
     public RaftProtocol(String raftConfigPath) {
         // init reader
-        PropertiesReader<RaftConfig> reader = new RaftPropertiesReader(raftConfigPath);
-        RaftMemberManager raftMemberManager = new MemberManager(reader.getProperties());
+        raftConfigPropertiesReader = new RaftPropertiesReader(raftConfigPath);
+        RaftMemberManager raftMemberManager = new MemberManager(raftConfigPropertiesReader.getProperties());
         this.raftServer = new GrpcRaftServer(raftConfigPath,
-                raftMemberManager, new GrpcFollowerNotifier(raftMemberManager, reader.getProperties()));
+                raftMemberManager, new GrpcFollowerNotifier(raftMemberManager, raftConfigPropertiesReader.getProperties()));
     }
     
     @Override

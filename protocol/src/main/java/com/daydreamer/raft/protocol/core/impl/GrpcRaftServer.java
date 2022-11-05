@@ -101,7 +101,9 @@ public class GrpcRaftServer extends AbstractRaftServer {
                 
                     @Override
                     public void onSuccess(Response response) {
-                        count.incrementAndGet();
+                        if (predicate.test(response)) {
+                            count.incrementAndGet();
+                        }
                         countDownLatch.countDown();
                     }
                 
@@ -121,7 +123,12 @@ public class GrpcRaftServer extends AbstractRaftServer {
                 e.printStackTrace();
             }
         }
-        countDownLatch.await(members.size() * 1500, TimeUnit.MICROSECONDS);
+        countDownLatch.await(members.size() * 2000, TimeUnit.MICROSECONDS);
+        if (request instanceof VoteRequest) {
+            System.out.println("term: " + ((VoteRequest) request).getTerm() + " get count: " + count.get());
+        } else if (request instanceof VoteCommitRequest) {
+            System.out.println("term: " + ((VoteCommitRequest) request).getTerm() + " get commit: " + count.get());
+        }
         return count.get() > (members.size() + 1) / 2;
     }
     

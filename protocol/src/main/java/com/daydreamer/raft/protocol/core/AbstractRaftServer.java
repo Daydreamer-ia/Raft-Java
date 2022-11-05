@@ -135,7 +135,7 @@ public abstract class AbstractRaftServer implements Closeable {
                     //   if cluster has leader base on leaderLastActiveTime variable
                     //   if current node receive a vote request from other in this term
                     if (isLeader()) {
-                        LOGGER.info("[AbstractRaftServer] - Current node is leader, member: " + raftMemberManager.getSelf().getIp());
+                        System.out.println("[AbstractRaftServer] - Current node is leader, term: " + raftMemberManager.getSelf().getTerm() + ", member: " + raftMemberManager.getSelf().getIp());
                         continue;
                     }
                     // if follower and timeout
