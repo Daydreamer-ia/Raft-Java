@@ -70,6 +70,7 @@ Here are my notes in Chinese
 
 > 以下为图示
 
+![6f7a7b1d77dc2da1292f2ad090d1dc9](https://user-images.githubusercontent.com/83362909/200126219-689e49d6-a832-4a58-a729-9f09782184a0.jpg)
 
 
 - `Raft` 的选主基于一种心跳机制，**集群中每个节点刚启动时都是 `follower` 身份（Step: starts up），`leader` 会周期性的向所有节点发送心跳包来维持自己的权威**。
@@ -128,6 +129,7 @@ Here are my notes in Chinese
 
 在所有节点正常工作的时候，`leader` 和 `follower` 的日志总是保持一致，`AppendEntries RPC` 也永远不会失败。
 
+![817146fafab3331ec74e2b7e2bb4e0d](https://user-images.githubusercontent.com/83362909/200126245-505ec455-8b06-403d-b368-b13ce662778e.jpg)
 
 
 - **Follower 日志落后于 leader**：**follower 宕机了一段时间**，follower-a 从收到 (term6, index9) 后开始宕机，follower-b 从收到 (term4, index4) 后开始宕机。
@@ -250,7 +252,7 @@ Here are my notes in Chinese
 
 > 日志快照格式
 
-![日志快照](https://user-images.githubusercontent.com/83362909/200125342-a785f1a9-8a14-4a9a-9cb5-c539fcbdee4a.png)
+![3b8a730e16e200ecd7ed328eef4ac48](https://user-images.githubusercontent.com/83362909/200126273-b9a2a9ce-6eaa-4231-8db9-4356c358789d.jpg)
 
 
 - **日志的元数据**：最后一条被该快照 `apply` 的日志 `term` 及 `index`；
