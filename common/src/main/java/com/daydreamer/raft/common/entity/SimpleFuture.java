@@ -16,8 +16,6 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class SimpleFuture<T> implements Future<T> {
     
-    private Condition syn = new ReentrantLock().newCondition();
-    
     private T data;
     
     private Exception throwable;
@@ -53,12 +51,12 @@ public class SimpleFuture<T> implements Future<T> {
     }
     
     @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
+    public synchronized boolean cancel(boolean mayInterruptIfRunning) {
         if (isCancel) {
             return isCancel;
         }
         isCancel = mayInterruptIfRunning;
-        syn.signal();
+        notifyAll();
         // clear
         executor.shutdown();
         return isCancel;
@@ -75,19 +73,19 @@ public class SimpleFuture<T> implements Future<T> {
     }
     
     @Override
-    public T get() throws InterruptedException {
+    public synchronized T get() throws InterruptedException {
         while (!finish) {
-            syn.await(1000, TimeUnit.MICROSECONDS);
+            wait(1000);
         }
         return data;
     }
     
     @Override
-    public T get(long timeout, TimeUnit unit) throws InterruptedException {
+    public synchronized T get(long timeout, TimeUnit unit) throws InterruptedException {
         long begin = System.currentTimeMillis();
         long remain = unit.toMillis(timeout);
         while (remain > 0 && !finish) {
-            syn.await(1000, TimeUnit.MICROSECONDS);
+            wait(1000);
             remain = remain - (System.currentTimeMillis() - begin);
         }
         return data;
@@ -98,9 +96,9 @@ public class SimpleFuture<T> implements Future<T> {
      *
      * @return exception
      */
-    public Exception getException() throws InterruptedException {
+    public synchronized Exception getException() throws InterruptedException {
         while (!finish) {
-            syn.await(400, TimeUnit.MICROSECONDS);
+            wait(400);
         }
         return throwable;
     }
