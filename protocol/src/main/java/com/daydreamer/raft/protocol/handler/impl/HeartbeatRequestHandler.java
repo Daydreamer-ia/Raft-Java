@@ -40,7 +40,8 @@ public class HeartbeatRequestHandler
         // refresh leader active time if normal cluster
         raftServer.refreshLeaderActive();
         // refresh term
-        raftServer.getSelf().setTerm(request.getTerm());
+        raftMemberManager.getSelf().setTerm(request.getTerm());
+        System.out.println("[HeartbeatRequestHandler] - Receive heartbeat from leader...");
         return new HeartbeatResponse();
     }
     
