@@ -2,6 +2,7 @@ package com.daydreamer.raft.protocol.core;
 
 import com.daydreamer.raft.protocol.entity.RaftConfig;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -48,7 +49,7 @@ public abstract class AbstractFollowerNotifier {
         if (isInit.get()) {
             return;
         }
-        executor.execute(this::keepFollowers);
+        executor.scheduleAtFixedRate(this::keepFollowers, raftConfig.getHeartInterval(), raftConfig.getHeartInterval(), TimeUnit.MICROSECONDS);
         // other init operation
         doInit();
         // finish

@@ -21,6 +21,8 @@ public class VoteCommitRequestHandler implements RequestHandler<VoteCommitReques
     public VoteCommitResponse handle(VoteCommitRequest request) {
         // judge the request whether from last term current node has voted
         if (request.getTerm() == raftServer.getLastTermCurrentNodeHasVoted()) {
+            // refresh leader active time
+            raftServer.refreshLeaderActive();
             return new VoteCommitResponse(true);
         }
         // reject if current node has largest term and log id
@@ -30,6 +32,8 @@ public class VoteCommitRequestHandler implements RequestHandler<VoteCommitReques
         if (request.getLogId() < raftServer.getSelf().getLogId()) {
             return new VoteCommitResponse(false);
         }
+        // refresh leader active time
+        raftServer.refreshLeaderActive();
         return new VoteCommitResponse(true);
     }
     

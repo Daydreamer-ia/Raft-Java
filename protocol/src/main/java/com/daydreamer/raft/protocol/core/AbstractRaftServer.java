@@ -102,6 +102,8 @@ public abstract class AbstractRaftServer implements Closeable {
             raftMemberManager.init();
             // start server
             doStartServer();
+            // init notify job
+            abstractFollowerNotifier.init();
             // init job to vote
             initAskVoteLeaderJob();
         } catch (Exception e) {

@@ -58,8 +58,6 @@ public class GrpcRaftServer extends AbstractRaftServer {
                 this.close();
                 LOGGER.info("[GrpcRaftServer] - server shut down");
             }));
-            // init
-            abstractFollowerNotifier.init();
         } catch (Exception e) {
             throw new IllegalStateException(
                     "[GrpcRaftServer] - Fail to init server, because " + e.getLocalizedMessage());
@@ -71,6 +69,8 @@ public class GrpcRaftServer extends AbstractRaftServer {
         // request vote
         Member self = raftMemberManager.getSelf();
         self.increaseTerm();
+        // refresh candidate
+        refreshCandidateActive();
         // if success half of all
         // then commit
         if (!batchRequestMembers(new VoteRequest(self.getTerm(), self.getLogId()), response -> {
