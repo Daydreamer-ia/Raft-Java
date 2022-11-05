@@ -2,10 +2,12 @@ package com.daydreamer.raft.protocol.handler;
 
 
 import com.daydreamer.raft.protocol.aware.RaftServerAware;
+import com.daydreamer.raft.protocol.aware.StorageRepositoryAware;
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
-import com.daydreamer.raft.protocol.core.FollowerNotifier;
+import com.daydreamer.raft.protocol.core.AbstractFollowerNotifier;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.aware.RaftMemberManagerAware;
+import com.daydreamer.raft.protocol.storage.StorageRepository;
 import com.daydreamer.raft.transport.constant.ResponseRepository;
 import com.daydreamer.raft.api.entity.Request;
 import com.daydreamer.raft.api.entity.Response;
@@ -38,9 +40,9 @@ public class RequestHandlerHolder {
     
     private static RaftMemberManager raftMemberManager;
     
-    private static FollowerNotifier followerNotifier;
-    
     private static AbstractRaftServer abstractRaftServer;
+    
+    private static StorageRepository storageRepository;
     
     /**
      * whether init
@@ -57,17 +59,17 @@ public class RequestHandlerHolder {
      * scan package and init
      *
      * @param raftMemberManager  raftMemberManager
-     * @param followerNotifier   followerNotifier
+     * @param storageRepository   storageRepository
      * @param abstractRaftServer abstractRaftServer
      */
-    public synchronized static void init(RaftMemberManager raftMemberManager, FollowerNotifier followerNotifier,
-            AbstractRaftServer abstractRaftServer) {
+    public synchronized static void init(RaftMemberManager raftMemberManager,
+            AbstractRaftServer abstractRaftServer, StorageRepository storageRepository) {
         if (finishInit.get()) {
             return;
         }
         RequestHandlerHolder.raftMemberManager = raftMemberManager;
         RequestHandlerHolder.abstractRaftServer = abstractRaftServer;
-        RequestHandlerHolder.followerNotifier = followerNotifier;
+        RequestHandlerHolder.storageRepository = storageRepository;
         try {
             // load instance
             File file = new File(Objects.requireNonNull(RequestHandlerHolder.class
@@ -80,18 +82,32 @@ public class RequestHandlerHolder {
                     String clazzName = packagePrefix + PACKAGE_SEPARATOR + child.getName().replace(CLASS_FORMAT, EMPTY);
                     Class<?> clazz = Class.forName(clazzName);
                     RequestHandler<Request, Response> handler = (RequestHandler<Request, Response>) clazz.newInstance();
-                    if (handler instanceof RaftMemberManagerAware) {
-                        ((RaftMemberManagerAware) handler).setRaftMemberManager(raftMemberManager);
-                    }
-                    if (handler instanceof RaftServerAware) {
-                        ((RaftServerAware) handler).setRaftServer(abstractRaftServer);
-                    }
+                    // inject aware
+                    injectAware(handler);
+                    // register
                     REGISTRY.put(handler.getSource(), handler);
                 }
             }
             finishInit.set(true);
         } catch (Exception e) {
             throw new IllegalStateException("Can not load base handler for request", e);
+        }
+    }
+    
+    /**
+     * inject aware
+     *
+     * @param handler handler
+     */
+    private static void injectAware(RequestHandler<Request, Response> handler) {
+        if (handler instanceof RaftMemberManagerAware) {
+            ((RaftMemberManagerAware) handler).setRaftMemberManager(raftMemberManager);
+        }
+        if (handler instanceof RaftServerAware) {
+            ((RaftServerAware) handler).setRaftServer(abstractRaftServer);
+        }
+        if (handler instanceof StorageRepositoryAware) {
+            ((StorageRepositoryAware) handler).setStorageRepository(storageRepository);
         }
     }
     

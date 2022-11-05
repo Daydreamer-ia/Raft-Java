@@ -2,10 +2,10 @@ package com.daydreamer.raft.protocol.core;
 
 import com.daydreamer.raft.common.utils.MsgUtils;
 import com.daydreamer.raft.protocol.constant.NodeRole;
-import com.daydreamer.raft.protocol.core.impl.RaftPropertiesReader;
 import com.daydreamer.raft.protocol.entity.Member;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
 import com.daydreamer.raft.protocol.handler.RequestHandlerHolder;
+import com.daydreamer.raft.protocol.storage.StorageRepository;
 import com.daydreamer.raft.transport.connection.Closeable;
 
 import java.util.Random;
@@ -61,12 +61,12 @@ public abstract class AbstractRaftServer implements Closeable {
     /**
      * FollowerNotifier
      */
-    protected FollowerNotifier followerNotifier;
+    protected AbstractFollowerNotifier abstractFollowerNotifier;
     
     /**
-     * raft properties
+     * storage repository
      */
-    private RaftPropertiesReader raftPropertiesReader;
+    private StorageRepository storageRepository;
     
     /**
      * vote executor
@@ -81,12 +81,12 @@ public abstract class AbstractRaftServer implements Closeable {
         }
     });
     
-    public AbstractRaftServer(RaftPropertiesReader raftPropertiesReader, RaftMemberManager raftMemberManager,
-            FollowerNotifier followerNotifier) {
-        this.raftPropertiesReader = raftPropertiesReader;
+    public AbstractRaftServer(RaftConfig raftConfig, RaftMemberManager raftMemberManager,
+            AbstractFollowerNotifier abstractFollowerNotifier, StorageRepository storageRepository) {
+        this.raftConfig = raftConfig;
         this.raftMemberManager = raftMemberManager;
-        this.followerNotifier = followerNotifier;
-        this.raftConfig = raftPropertiesReader.getProperties();
+        this.abstractFollowerNotifier = abstractFollowerNotifier;
+        this.storageRepository = storageRepository;
     }
     
     /**
@@ -95,7 +95,7 @@ public abstract class AbstractRaftServer implements Closeable {
     public void start() {
         try {
             // init request handler
-            RequestHandlerHolder.init(raftMemberManager, followerNotifier, this);
+            RequestHandlerHolder.init(raftMemberManager, this, storageRepository);
             // load entity
             Class.forName(MsgUtils.class.getName());
             // init member manager
@@ -143,6 +143,8 @@ public abstract class AbstractRaftServer implements Closeable {
                     // if candidate and timeout
                     boolean candidateWaitTimeout = NodeRole.CANDIDATE.equals(getSelf().getRole()) && System.currentTimeMillis() - beCandidateStartTime > raftConfig.getCandidateStatusTimeout();
                     if (leaderHeartbeatTimeout || candidateWaitTimeout) {
+                        // timeout if cluster invalid
+                        normalCluster.set(false);
                         // return the val whether don't need to allow to vote again
                         // current may be leader
                         if (requestVote()) {
@@ -200,6 +202,7 @@ public abstract class AbstractRaftServer implements Closeable {
     public synchronized void refreshCandidateActive() {
         raftMemberManager.getSelf().setRole(NodeRole.CANDIDATE);
         beCandidateStartTime = System.currentTimeMillis();
+        normalCluster.compareAndSet(false, true);
     }
     
     /**
@@ -209,6 +212,7 @@ public abstract class AbstractRaftServer implements Closeable {
      */
     public synchronized void refreshLastVotedTerm(int term) {
         lastTermCurrentNodeHasVoted = term;
+        normalCluster.compareAndSet(false, true);
     }
     
     /**

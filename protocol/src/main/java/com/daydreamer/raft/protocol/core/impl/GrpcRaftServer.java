@@ -2,8 +2,10 @@ package com.daydreamer.raft.protocol.core.impl;
 
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
-import com.daydreamer.raft.protocol.core.FollowerNotifier;
+import com.daydreamer.raft.protocol.core.AbstractFollowerNotifier;
 import com.daydreamer.raft.protocol.entity.Member;
+import com.daydreamer.raft.protocol.entity.RaftConfig;
+import com.daydreamer.raft.protocol.storage.StorageRepository;
 import com.daydreamer.raft.transport.connection.Connection;
 import com.daydreamer.raft.transport.connection.ResponseCallBack;
 import com.daydreamer.raft.api.entity.Request;
@@ -34,9 +36,9 @@ public class GrpcRaftServer extends AbstractRaftServer {
      */
     private Server server;
     
-    public GrpcRaftServer(String raftConfigPath, RaftMemberManager raftMemberManager,
-            FollowerNotifier followerNotifier) {
-        super(new RaftPropertiesReader(raftConfigPath), raftMemberManager, followerNotifier);
+    public GrpcRaftServer(RaftConfig raftConfigPath, RaftMemberManager raftMemberManager,
+            AbstractFollowerNotifier abstractFollowerNotifier, StorageRepository storageRepository) {
+        super(raftConfigPath, raftMemberManager, abstractFollowerNotifier, storageRepository);
     }
     
     @Override
@@ -57,7 +59,7 @@ public class GrpcRaftServer extends AbstractRaftServer {
                 LOGGER.info("[GrpcRaftServer] - server shut down");
             }));
             // init
-            followerNotifier.init();
+            abstractFollowerNotifier.init();
         } catch (Exception e) {
             throw new IllegalStateException(
                     "[GrpcRaftServer] - Fail to init server, because " + e.getLocalizedMessage());

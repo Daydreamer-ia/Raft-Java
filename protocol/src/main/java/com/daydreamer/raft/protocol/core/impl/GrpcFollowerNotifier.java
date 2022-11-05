@@ -1,7 +1,7 @@
 package com.daydreamer.raft.protocol.core.impl;
 
 import com.daydreamer.raft.protocol.constant.NodeStatus;
-import com.daydreamer.raft.protocol.core.FollowerNotifier;
+import com.daydreamer.raft.protocol.core.AbstractFollowerNotifier;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
 import com.daydreamer.raft.protocol.entity.Member;
@@ -12,7 +12,6 @@ import com.daydreamer.raft.api.entity.request.HeartbeatRequest;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -21,33 +20,12 @@ import java.util.logging.Logger;
  * <p>
  * It is a implmement to retain grpc connection.
  */
-public class GrpcFollowerNotifier implements FollowerNotifier {
+public class GrpcFollowerNotifier extends AbstractFollowerNotifier {
     
     private static final Logger LOGGER = Logger.getLogger(GrpcFollowerNotifier.class.getSimpleName());
     
-    private RaftMemberManager raftMemberManager;
-    
-    private RaftConfig raftConfig;
-    
     public GrpcFollowerNotifier(RaftMemberManager raftMemberManager, RaftConfig raftConfig) {
-        this.raftMemberManager = raftMemberManager;
-        this.raftConfig = raftConfig;
-    }
-    
-    /**
-     * executor for schedule
-     */
-    private ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, r -> {
-        Thread thread = new Thread(r);
-        thread.setName("refresh-active-time-thread");
-        thread.setDaemon(true);
-        return thread;
-    });
-    
-    @Override
-    public void init() {
-        // submit job
-        executor.scheduleAtFixedRate(this::keepFollowers, 0, raftConfig.getHeartInterval(), TimeUnit.MICROSECONDS);
+        super(raftMemberManager, raftConfig);
     }
     
     @Override

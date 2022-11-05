@@ -1,6 +1,5 @@
 package com.daydreamer.raft.example;
 
-import com.daydreamer.raft.common.entity.SimpleFuture;
 import com.daydreamer.raft.protocol.core.Protocol;
 import com.daydreamer.raft.protocol.core.impl.RaftProtocol;
 

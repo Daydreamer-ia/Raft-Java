@@ -2,6 +2,8 @@ package com.daydreamer.raft.transport.connection.impl.grpc;
 
 import com.daydreamer.raft.api.entity.Request;
 import com.daydreamer.raft.api.entity.Response;
+import com.daydreamer.raft.api.entity.base.ErrorResponse;
+import com.daydreamer.raft.api.exception.InvalidResponseException;
 import com.daydreamer.raft.api.grpc.Message;
 import com.daydreamer.raft.api.grpc.RequesterGrpc;
 import com.daydreamer.raft.common.entity.SimpleFuture;
@@ -66,6 +68,9 @@ public class GrpcConnection extends Connection {
             try {
                 Future<Response> future = request(request);
                 Response response = future.get(timeout, TimeUnit.MICROSECONDS);
+                if (response instanceof ErrorResponse) {
+                    callBack.onFail(new InvalidResponseException((ErrorResponse) response));
+                }
                 callBack.onSuccess(response);
             } catch (TimeoutException te) {
                 callBack.onTimeout();
@@ -82,7 +87,11 @@ public class GrpcConnection extends Connection {
             Response result = null;
             try {
                 Message responseMsg = requesterBlockingStub.request(MsgUtils.convertMsg(request));
-                callBack.onSuccess(MsgUtils.convertResponse(responseMsg));
+                Response response = MsgUtils.convertResponse(responseMsg);
+                if (response instanceof ErrorResponse) {
+                    callBack.onFail(new InvalidResponseException((ErrorResponse) response));
+                }
+                callBack.onSuccess(response);
             } catch (Exception e) {
                 callBack.onFail(e);
             }

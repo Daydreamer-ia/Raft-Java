@@ -39,6 +39,8 @@ public class HeartbeatRequestHandler
         // let current node to be follower
         // refresh leader active time if normal cluster
         raftServer.refreshLeaderActive();
+        // refresh term
+        raftServer.getSelf().setTerm(request.getTerm());
         return new HeartbeatResponse();
     }
     
