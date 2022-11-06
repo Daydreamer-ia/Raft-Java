@@ -4,7 +4,6 @@ package com.daydreamer.raft.protocol.handler;
 import com.daydreamer.raft.protocol.aware.RaftServerAware;
 import com.daydreamer.raft.protocol.aware.StorageRepositoryAware;
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
-import com.daydreamer.raft.protocol.core.AbstractFollowerNotifier;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.aware.RaftMemberManagerAware;
 import com.daydreamer.raft.protocol.storage.StorageRepository;
@@ -28,7 +27,7 @@ public class RequestHandlerHolder {
     /**
      * registry
      */
-    public static final Map<Class<? extends Request>, RequestHandler<Request, Response>> REGISTRY = new ConcurrentHashMap<>();
+    public final Map<Class<? extends Request>, RequestHandler<Request, Response>> registry = new ConcurrentHashMap<>();
     
     private static final String HANDLER_PACKAGE = "com/daydreamer/raft/protocol/handler/impl";
     
@@ -38,42 +37,44 @@ public class RequestHandlerHolder {
     
     private static final String EMPTY = "";
     
-    private static RaftMemberManager raftMemberManager;
+    private RaftMemberManager raftMemberManager;
     
-    private static AbstractRaftServer abstractRaftServer;
+    private AbstractRaftServer abstractRaftServer;
     
-    private static StorageRepository storageRepository;
+    private StorageRepository storageRepository;
     
     /**
      * whether init
      */
-    private static AtomicBoolean finishInit = new AtomicBoolean(false);
+    private AtomicBoolean finishInit = new AtomicBoolean(false);
     
-    /**
-     * private constructor
-     */
-    private RequestHandlerHolder() {
-    }
     
     /**
      * scan package and init
      *
      * @param raftMemberManager  raftMemberManager
-     * @param storageRepository   storageRepository
+     * @param storageRepository  storageRepository
      * @param abstractRaftServer abstractRaftServer
      */
-    public synchronized static void init(RaftMemberManager raftMemberManager,
-            AbstractRaftServer abstractRaftServer, StorageRepository storageRepository) {
+    public RequestHandlerHolder(RaftMemberManager raftMemberManager, AbstractRaftServer abstractRaftServer,
+            StorageRepository storageRepository) {
+        this.raftMemberManager = raftMemberManager;
+        this.abstractRaftServer = abstractRaftServer;
+        this.storageRepository = storageRepository;
+    }
+    
+    /**
+     * init
+     */
+    public synchronized void init() {
         if (finishInit.get()) {
             return;
         }
-        RequestHandlerHolder.raftMemberManager = raftMemberManager;
-        RequestHandlerHolder.abstractRaftServer = abstractRaftServer;
-        RequestHandlerHolder.storageRepository = storageRepository;
         try {
             // load instance
-            File file = new File(Objects.requireNonNull(RequestHandlerHolder.class
-                            .getClassLoader().getResource(HANDLER_PACKAGE)).getFile());
+            File file = new File(
+                    Objects.requireNonNull(RequestHandlerHolder.class.getClassLoader().getResource(HANDLER_PACKAGE))
+                            .getFile());
             File[] files = file.listFiles();
             String packagePrefix = HANDLER_PACKAGE.replaceAll("/", ".");
             if (files != null) {
@@ -85,7 +86,7 @@ public class RequestHandlerHolder {
                     // inject aware
                     injectAware(handler);
                     // register
-                    REGISTRY.put(handler.getSource(), handler);
+                    registry.put(handler.getSource(), handler);
                 }
             }
             finishInit.set(true);
@@ -99,7 +100,7 @@ public class RequestHandlerHolder {
      *
      * @param handler handler
      */
-    private static void injectAware(RequestHandler<Request, Response> handler) {
+    private void injectAware(RequestHandler<Request, Response> handler) {
         if (handler instanceof RaftMemberManagerAware) {
             ((RaftMemberManagerAware) handler).setRaftMemberManager(raftMemberManager);
         }
@@ -117,8 +118,8 @@ public class RequestHandlerHolder {
      * @param request request
      * @return response
      */
-    public static Response handle(Request request) {
-        RequestHandler<Request, Response> handler = REGISTRY.get(request.getClass());
+    public Response handle(Request request) {
+        RequestHandler<Request, Response> handler = registry.get(request.getClass());
         // if cannot find handler
         if (handler == null) {
             return ResponseRepository.NOT_HANDLER_FOUND;
@@ -131,9 +132,9 @@ public class RequestHandlerHolder {
      *
      * @param handler handler
      */
-    public static void register(RequestHandler<? extends Request, ? extends Response> handler) {
-        if (!REGISTRY.containsKey(handler.getSource())) {
-            REGISTRY.put(handler.getSource(), (RequestHandler<Request, Response>) handler);
+    public void register(RequestHandler<? extends Request, ? extends Response> handler) {
+        if (!registry.containsKey(handler.getSource())) {
+            registry.put(handler.getSource(), (RequestHandler<Request, Response>) handler);
         }
     }
 }

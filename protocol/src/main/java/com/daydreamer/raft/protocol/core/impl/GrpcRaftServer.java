@@ -50,7 +50,7 @@ public class GrpcRaftServer extends AbstractRaftServer {
     protected void doStartServer() {
         try {
             int port = raftConfig.getPort();
-            server = ServerBuilder.forPort(port).addService(new GrpcRequestServerCore()).build().start();
+            server = ServerBuilder.forPort(port).addService(new GrpcRequestServerCore(requestHandlerHolder)).build().start();
             LOGGER.info("[GrpcRaftServer] - Server started, listening on port: " + port);
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 // Use stderr here since the logger may have been reset by its JVM shutdown hook.
@@ -126,11 +126,6 @@ public class GrpcRaftServer extends AbstractRaftServer {
             }
         }
         countDownLatch.await(members.size() * 2000, TimeUnit.MICROSECONDS);
-        if (request instanceof VoteRequest) {
-            System.out.println("term: " + ((VoteRequest) request).getTerm() + " get count: " + count.get());
-        } else if (request instanceof VoteCommitRequest) {
-            System.out.println("term: " + ((VoteCommitRequest) request).getTerm() + " get commit: " + count.get());
-        }
         return count.get() > (members.size() + 1) / 2;
     }
     

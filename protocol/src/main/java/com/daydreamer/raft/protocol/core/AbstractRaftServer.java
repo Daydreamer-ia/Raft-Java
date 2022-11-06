@@ -1,5 +1,6 @@
 package com.daydreamer.raft.protocol.core;
 
+import com.daydreamer.raft.api.entity.Request;
 import com.daydreamer.raft.common.utils.MsgUtils;
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.entity.Member;
@@ -69,6 +70,11 @@ public abstract class AbstractRaftServer implements Closeable {
     private StorageRepository storageRepository;
     
     /**
+     * registry
+     */
+    protected RequestHandlerHolder requestHandlerHolder;
+    
+    /**
      * vote executor
      */
     private ExecutorService executorService = new ThreadPoolExecutor(1, 1, 1000, TimeUnit.MICROSECONDS, new LinkedBlockingQueue<>(), new ThreadFactory() {
@@ -95,11 +101,13 @@ public abstract class AbstractRaftServer implements Closeable {
     public void start() {
         try {
             // init request handler
-            RequestHandlerHolder.init(raftMemberManager, this, storageRepository);
+            requestHandlerHolder = new RequestHandlerHolder(raftMemberManager, this, storageRepository);
             // load entity
             Class.forName(MsgUtils.class.getName());
             // init member manager
             raftMemberManager.init();
+            // init holder
+            requestHandlerHolder.init();
             // start server
             doStartServer();
             // init notify job

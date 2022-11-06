@@ -39,13 +39,15 @@ public class VoteRequestHandler implements RequestHandler<VoteRequest, VoteRespo
         if (term < raftMemberManager.getSelf().getLogId()) {
             return new VoteResponse(false);
         }
+        // update last term
+        raftServer.getSelf().setTerm(request.getTerm());
+        raftServer.refreshLastVotedTerm(request.getTerm());
         // lower log id
         if (logIndex < raftMemberManager.getSelf().getLogId()) {
             return new VoteResponse(false);
         }
         // refresh may be leader active time
         raftServer.refreshLeaderActive();
-        raftServer.refreshLastVotedTerm(request.getTerm());
         return new VoteResponse(true);
     }
     
