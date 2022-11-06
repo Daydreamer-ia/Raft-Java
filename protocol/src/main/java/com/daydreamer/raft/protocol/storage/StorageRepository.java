@@ -1,10 +1,11 @@
 package com.daydreamer.raft.protocol.storage;
 
-import com.daydreamer.raft.protocol.entity.LogEntry;
+import com.daydreamer.raft.api.entity.base.LogEntry;
+import com.daydreamer.raft.protocol.exception.LogException;
 
 /**
  * @author Daydreamer
- *
+ * <p>
  * log storage
  */
 public interface StorageRepository {
@@ -12,17 +13,21 @@ public interface StorageRepository {
     /**
      * commit
      *
-     * @param term term
+     * @param term  term
      * @param logId log id
+     * @return whether success, fail if new log id is not linked to last log id
+     * @throws LogException LogException
      */
-    void commit(int term, long logId);
+    boolean commit(int term, long logId) throws LogException;
     
     /**
      * append log
      *
      * @param logEntry new log
+     * @return whether success, fail if new log id is not linked to last log id
+     * @throws LogException LogException
      */
-    void append(LogEntry logEntry);
+    boolean append(LogEntry logEntry) throws LogException;
     
     /**
      * get log by id
@@ -38,4 +43,11 @@ public interface StorageRepository {
      * @return log id
      */
     long getLastCommittedLogId();
+    
+    /**
+     * get last uncommitted log id
+     *
+     * @return last uncommitted log id
+     */
+    long getLastUncommittedLogId();
 }

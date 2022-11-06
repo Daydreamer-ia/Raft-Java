@@ -1,6 +1,6 @@
-package com.daydreamer.raft.protocol.entity;
+package com.daydreamer.raft.api.entity.base;
 
-import com.daydreamer.raft.protocol.constant.LogType;
+import com.daydreamer.raft.api.entity.constant.LogType;
 
 import java.io.Serializable;
 

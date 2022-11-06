@@ -1,4 +1,4 @@
-package com.daydreamer.raft.protocol.constant;
+package com.daydreamer.raft.api.entity.constant;
 
 /**
  * @author Daydreamer

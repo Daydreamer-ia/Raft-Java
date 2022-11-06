@@ -41,7 +41,6 @@ public class HeartbeatRequestHandler
         raftServer.refreshLeaderActive();
         // refresh term
         raftMemberManager.getSelf().setTerm(request.getTerm());
-        System.out.println("[HeartbeatRequestHandler] - Receive heartbeat from leader...");
         return new HeartbeatResponse();
     }
     

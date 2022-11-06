@@ -14,10 +14,16 @@ import io.grpc.stub.StreamObserver;
  */
 public class GrpcRequestServerCore extends RequesterGrpc.RequesterImplBase {
     
+    private RequestHandlerHolder requestHandlerHolder;
+    
+    public GrpcRequestServerCore(RequestHandlerHolder requestHandlerHolder) {
+        this.requestHandlerHolder = requestHandlerHolder;
+    }
+    
     @Override
     public void request(Message msg, StreamObserver<Message> responseObserver) {
         // handle
-        Response response = RequestHandlerHolder.handle(MsgUtils.convertRequest(msg));
+        Response response = requestHandlerHolder.handle(MsgUtils.convertRequest(msg));
         // response
         Message back = MsgUtils.convertMsg(response);
         responseObserver.onNext(back);
