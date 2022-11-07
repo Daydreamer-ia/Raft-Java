@@ -9,6 +9,7 @@ import com.daydreamer.raft.protocol.handler.RequestHandlerHolder;
 import com.daydreamer.raft.protocol.storage.StorageRepository;
 import com.daydreamer.raft.transport.connection.Closeable;
 
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -159,6 +160,8 @@ public abstract class AbstractRaftServer implements Closeable {
                         // current may be leader
                         if (requestVote()) {
                             getSelf().setRole(NodeRole.LEADER);
+                            // syn log id
+                            synAllMember();
                             normalCluster.compareAndSet(false, true);
                             LOGGER.info("[AbstractRaftServer] - Server node has been leader, member: " + raftMemberManager.getSelf().getAddress());
                         }
@@ -176,6 +179,18 @@ public abstract class AbstractRaftServer implements Closeable {
      * @return self
      */
     public abstract Member getSelf();
+    
+    /**
+     * update member term and log id
+     */
+    private void synAllMember() {
+        List<Member> allMember = raftMemberManager.getAllMember();
+        Member self = raftMemberManager.getSelf();
+        allMember.forEach(member -> {
+            member.setTerm(self.getTerm());
+            member.setLogId(storageRepository.getLastCommittedLogId());
+        });
+    }
     
     /**
      * start server
