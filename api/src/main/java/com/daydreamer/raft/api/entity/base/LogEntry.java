@@ -3,6 +3,7 @@ package com.daydreamer.raft.api.entity.base;
 import com.daydreamer.raft.api.entity.constant.LogType;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * @author Daydreamer
@@ -17,7 +18,7 @@ public class LogEntry implements Serializable {
     /**
      * log id
      */
-    private long lodId;
+    private long logId;
     
     /**
      * data
@@ -29,16 +30,16 @@ public class LogEntry implements Serializable {
      */
     private LogType logType;
     
-    public LogEntry(int term, long lodId, Object data, LogType logType) {
+    public LogEntry(int term, long logId, Object data, LogType logType) {
         this.term = term;
-        this.lodId = lodId;
+        this.logId = logId;
         this.data = data;
         this.logType = logType;
     }
     
-    public LogEntry(int term, long lodId) {
+    public LogEntry(int term, long logId) {
         this.term = term;
-        this.lodId = lodId;
+        this.logId = logId;
     }
     
     public int getTerm() {
@@ -49,12 +50,12 @@ public class LogEntry implements Serializable {
         this.term = term;
     }
     
-    public long getLodId() {
-        return lodId;
+    public long getLogId() {
+        return logId;
     }
     
-    public void setLodId(long lodId) {
-        this.lodId = lodId;
+    public void setLogId(long logId) {
+        this.logId = logId;
     }
     
     public Object getData() {
@@ -74,7 +75,24 @@ public class LogEntry implements Serializable {
     }
     
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof LogEntry)) {
+            return false;
+        }
+        LogEntry logEntry = (LogEntry) o;
+        return term == logEntry.term && logId == logEntry.logId;
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(term, logId);
+    }
+    
+    @Override
     public String toString() {
-        return "LogEntry{" + "term=" + term + ", lodId=" + lodId + ", data=" + data + ", logType=" + logType + '}';
+        return "LogEntry{" + "term=" + term + ", lodId=" + logId + ", data=" + data + ", logType=" + logType + '}';
     }
 }

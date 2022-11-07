@@ -1,7 +1,6 @@
 package com.daydreamer.raft.protocol.storage.impl;
 
 import com.daydreamer.raft.api.entity.base.LogEntry;
-import com.daydreamer.raft.protocol.constant.LogErrorCode;
 import com.daydreamer.raft.protocol.exception.LogException;
 import com.daydreamer.raft.protocol.storage.StorageRepository;
 
@@ -19,86 +18,132 @@ public class MemoryLogRepository implements StorageRepository {
     /**
      * uncommitted logs
      */
-    private List<LogEntry> uncommittedLog = Collections.synchronizedList(new ArrayList<>());
+    private List<LogEntry> logEntriesList = Collections.synchronizedList(new ArrayList<>());
     
     /**
-     * committed logs
+     * last committed log
      */
-    private List<LogEntry> committedLog = Collections.synchronizedList(new ArrayList<>());
+    private int lastCommittedLogIndex = -1;
+    
+    /**
+     * last committed log id
+     */
+    private long lastCommittedLogId = -1;
+    
+    /**
+     * last uncommitted log id
+     */
+    private long lastUncommittedLogId = -1;
+    
+    /**
+     * last uncommitted log index
+     */
+    private int lastUncommittedLogIndex = -1;
     
     @Override
     public synchronized boolean commit(int term, long logId) throws LogException {
-        if (uncommittedLog.size() == 0) {
-            throw new LogException(LogErrorCode.UNCOMMITTED_LOG_TO_LESS);
+        // no uncommitted log
+        if (lastCommittedLogIndex == -1) {
+            return false;
         }
-        // if success
-        long lastUncommittedLogId = uncommittedLog.get(uncommittedLog.size() - 1).getLodId();
-        long lastCommittedLogId = committedLog.get(committedLog.size() - 1).getLodId();
-        // update threshold
-        if (lastUncommittedLogId < logId) {
-            throw new LogException(LogErrorCode.UNCOMMITTED_LOG_TO_LESS);
+        // get last uncommitted log
+        LogEntry lastUncommittedLog = logEntriesList.get(lastUncommittedLogIndex);
+        // if log id smaller, normal
+        if (lastUncommittedLog.getLogId() >= logId) {
+            // find log
+            while (logEntriesList.get(lastCommittedLogIndex).getLogId() != logId) {
+                lastUncommittedLogIndex++;
+            }
+            lastCommittedLogId = logEntriesList.get(lastCommittedLogIndex).getLogId();
+            return true;
         }
-        // find index
-        int tmp = uncommittedLog.size() - 1;
-        while (tmp >= 0 && uncommittedLog.get(tmp).getLodId() != lastCommittedLogId) {
-            tmp--;
-        }
-        int startIndex = tmp + 1;
-        // commit until
-        while (logId >= lastCommittedLogId) {
-            // append
-            committedLog.add(uncommittedLog.get(startIndex));
-            lastCommittedLogId++;
-            startIndex++;
-        }
-        return true;
+        // need more log
+        return false;
     }
     
     @Override
     public synchronized boolean append(LogEntry logEntry) throws LogException {
         // if empty
-        if (uncommittedLog.size() == 0) {
-            // not first
-            if (logEntry.getLodId() != 1) {
-                return false;
-            }
-            uncommittedLog.add(logEntry);
+        if (lastUncommittedLogIndex == -1) {
+            logEntriesList.add(logEntry);
+            lastUncommittedLogIndex++;
+            lastCommittedLogId = logEntry.getLogId();
             return true;
         }
-        // judge last log
-        LogEntry lastLog = uncommittedLog.get(uncommittedLog.size() - 1);
-        if (lastLog.getLodId() + 1 == logEntry.getLodId()) {
-            uncommittedLog.add(logEntry);
-            return true;
+        // find suitable index
+        if (logEntry.getLogId() <= lastCommittedLogId) {
+            throw new IllegalArgumentException(
+                    "log id: " + logEntry.getLogId() + " has committed, which cannot be modified!");
         }
-        // cover
-        else if (lastLog.getLodId() + 1 > logEntry.getLodId()) {
-            uncommittedLog.add((int) logEntry.getLodId() + 1, logEntry);
+        int index = lastUncommittedLogIndex;
+        while (index > lastCommittedLogIndex
+                && logEntriesList.get(index).getLogId() + 1 != logEntry.getLogId()) {
+            index--;
         }
-        return false;
+        if (index < logEntriesList.size()) {
+            logEntriesList.add(index, logEntry);
+        } else {
+            logEntriesList.add(logEntry);
+        }
+        lastUncommittedLogId = logEntry.getLogId();
+        lastUncommittedLogIndex = index;
+        return true;
     }
     
     @Override
-    public synchronized LogEntry getLog(long logId) {
-        if (committedLog.size() < logId - 1) {
+    public synchronized LogEntry getCommittedLog(long logId) {
+        // not found
+        if (lastCommittedLogIndex == -1) {
             return null;
         }
-        return committedLog.get((int) logId);
+        int index = lastCommittedLogIndex;
+        while (index >= 0 && logEntriesList.get(index).getLogId() != logId) {
+            index--;
+        }
+        return index == -1 ? null : logEntriesList.get(index);
+    }
+    
+    @Override
+    public LogEntry getUncommittedLog(long logId) {
+        if (logEntriesList.size() == 0) {
+            return null;
+        }
+        int index = logEntriesList.size() - 1;
+        // if not committed anything
+        if (lastCommittedLogIndex == -1) {
+            while (index >= 0 && logEntriesList.get(index).getLogId() != logId) {
+                index--;
+            }
+            return index == -1 ? null : logEntriesList.get(index);
+        }
+        // if has committed logs
+        else {
+            while (index > lastCommittedLogIndex && logEntriesList.get(index).getLogId() != logId) {
+                index--;
+            }
+            return index == lastCommittedLogIndex ? null : logEntriesList.get(index);
+        }
     }
     
     @Override
     public synchronized long getLastCommittedLogId() {
-        if (uncommittedLog.size() == 0) {
-            return -1;
-        }
-        return uncommittedLog.get(committedLog.size() - 1).getLodId();
+        return lastCommittedLogId;
     }
     
     @Override
-    public long getLastUncommittedLogId() {
-        if (committedLog.size() == 0) {
-            return -1;
+    public LogEntry getLogById(long logId) {
+        if (lastUncommittedLogId >= logId) {
+            int index = lastUncommittedLogIndex;
+            while (index >= 0 && logEntriesList.get(index).getLogId() != logId) {
+                index--;
+            }
+            return index == -1 ? null : logEntriesList.get(index);
         }
-        return committedLog.get(committedLog.size() - 1).getLodId();
+        return null;
+    }
+    
+    @Override
+    public synchronized long getLastUncommittedLogId() {
+        return lastUncommittedLogId;
     }
 }
