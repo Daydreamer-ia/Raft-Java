@@ -40,13 +40,23 @@ public class DelegateStorageRepository implements StorageRepository {
     }
     
     @Override
-    public LogEntry getLog(long logId) {
-        return storageRepository.getLog(logId);
+    public LogEntry getCommittedLog(long logId) {
+        return storageRepository.getCommittedLog(logId);
+    }
+    
+    @Override
+    public LogEntry getUncommittedLog(long logId) {
+        return storageRepository.getUncommittedLog(logId);
     }
     
     @Override
     public long getLastCommittedLogId() {
         return storageRepository.getLastCommittedLogId();
+    }
+    
+    @Override
+    public LogEntry getLogById(long logId) {
+        return storageRepository.getLogById(logId);
     }
     
     @Override

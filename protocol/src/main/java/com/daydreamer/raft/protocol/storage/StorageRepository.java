@@ -30,12 +30,20 @@ public interface StorageRepository {
     boolean append(LogEntry logEntry) throws LogException;
     
     /**
-     * get log by id
+     * get committed log by id
      *
      * @param logId log id
      * @return log
      */
-    LogEntry getLog(long logId);
+    LogEntry getCommittedLog(long logId);
+    
+    /**
+     * get uncommitted log by id
+     *
+     * @param logId log id
+     * @return log
+     */
+    LogEntry getUncommittedLog(long logId);
     
     /**
      * get last committed log id
@@ -43,6 +51,14 @@ public interface StorageRepository {
      * @return log id
      */
     long getLastCommittedLogId();
+    
+    /**
+     * get log by id
+     *
+     * @param logId log id
+     * @return get log
+     */
+    LogEntry getLogById(long logId);
     
     /**
      * get last uncommitted log id

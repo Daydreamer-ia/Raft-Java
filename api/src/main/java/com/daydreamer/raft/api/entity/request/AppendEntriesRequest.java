@@ -11,12 +11,12 @@ import java.util.List;
 public class AppendEntriesRequest extends Request {
     
     /**
-     * last committed log id
+     * last committed or uncommitted log id
      */
-    private long lastCommittedId;
+    private long lastLogId;
     
     /**
-     * last committed log term
+     * last committed or uncommitted log term
      */
     private int lastTerm;
     
@@ -31,9 +31,9 @@ public class AppendEntriesRequest extends Request {
     private int currentTerm;
     
     /**
-     * current committed log id
+     * current committed or uncommitted log id
      */
-    private long currentCommittedLogId;
+    private long currentLogId;
     
     /**
      * whether it is payload
@@ -56,12 +56,12 @@ public class AppendEntriesRequest extends Request {
         this.currentTerm = currentTerm;
     }
     
-    public long getCurrentCommittedLogId() {
-        return currentCommittedLogId;
+    public long getCurrentLogId() {
+        return currentLogId;
     }
     
-    public void setCurrentCommittedLogId(long currentCommittedLogId) {
-        this.currentCommittedLogId = currentCommittedLogId;
+    public void setCurrentLogId(long currentLogId) {
+        this.currentLogId = currentLogId;
     }
     
     public boolean isPayload() {
@@ -80,12 +80,12 @@ public class AppendEntriesRequest extends Request {
         this.logEntries = logEntries;
     }
     
-    public long getLastCommittedId() {
-        return lastCommittedId;
+    public long getLastLogId() {
+        return lastLogId;
     }
     
-    public void setLastCommittedId(long lastCommittedId) {
-        this.lastCommittedId = lastCommittedId;
+    public void setLastLogId(long lastLogId) {
+        this.lastLogId = lastLogId;
     }
     
     public int getLastTerm() {
