@@ -1,6 +1,7 @@
 package com.daydreamer.raft.protocol.storage.impl;
 
 import com.daydreamer.raft.api.entity.base.LogEntry;
+import com.daydreamer.raft.protocol.constant.LogErrorCode;
 import com.daydreamer.raft.protocol.exception.LogException;
 import com.daydreamer.raft.protocol.storage.StorageRepository;
 
@@ -27,33 +28,34 @@ public class MemoryLogRepository implements StorageRepository {
     
     @Override
     public synchronized boolean commit(int term, long logId) throws LogException {
-        if (committedLog.size() == 0) {
-            return false;
+        if (uncommittedLog.size() == 0) {
+            throw new LogException(LogErrorCode.UNCOMMITTED_LOG_TO_LESS);
         }
         // if success
         long lastUncommittedLogId = uncommittedLog.get(uncommittedLog.size() - 1).getLodId();
         long lastCommittedLogId = committedLog.get(committedLog.size() - 1).getLodId();
         // update threshold
-        long untilLogId = lastUncommittedLogId;
-        if (lastUncommittedLogId > logId) {
-            untilLogId = logId;
+        if (lastUncommittedLogId < logId) {
+            throw new LogException(LogErrorCode.UNCOMMITTED_LOG_TO_LESS);
         }
         // find index
         int tmp = uncommittedLog.size() - 1;
-        while (uncommittedLog.get(tmp).getLodId() < lastCommittedLogId) {
+        while (tmp >= 0 && uncommittedLog.get(tmp).getLodId() != lastCommittedLogId) {
             tmp--;
         }
+        int startIndex = tmp + 1;
         // commit until
-        while (untilLogId > lastCommittedLogId) {
+        while (logId > lastCommittedLogId) {
             // append
-            
+            committedLog.add(uncommittedLog.get(startIndex));
             lastCommittedLogId++;
+            startIndex++;
         }
         return true;
     }
     
     @Override
-    public synchronized boolean append(LogEntry logEntry) {
+    public synchronized boolean append(LogEntry logEntry) throws LogException {
         // if empty
         if (uncommittedLog.size() == 0) {
             uncommittedLog.add(logEntry);
@@ -64,6 +66,10 @@ public class MemoryLogRepository implements StorageRepository {
         if (lastLog.getLodId() + 1 == logEntry.getLodId()) {
             uncommittedLog.add(logEntry);
             return true;
+        }
+        // cover
+        else if (lastLog.getLodId() + 1 > logEntry.getLodId()) {
+            uncommittedLog.add((int) logEntry.getLodId() + 1, logEntry);
         }
         return false;
     }
