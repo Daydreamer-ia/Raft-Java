@@ -18,7 +18,7 @@ public class AppendEntriesResponse extends Response {
     private int followerTerm;
     
     /**
-     * current follower max log id
+     * current follower last committed log id
      */
     private long followerLogId;
     
