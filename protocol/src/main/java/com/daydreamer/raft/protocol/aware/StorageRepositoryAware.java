@@ -10,7 +10,7 @@ public interface StorageRepositoryAware {
     /**
      * setter for StorageRepositoryAware
      *
-     * @param storageRepositoryAware StorageRepositoryAware
+     * @param storageRepository StorageRepository
      */
-    void setStorageRepository(StorageRepository storageRepositoryAware);
+    void setStorageRepository(StorageRepository storageRepository);
 }

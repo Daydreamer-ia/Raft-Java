@@ -45,7 +45,7 @@ public class MemoryLogRepository implements StorageRepository {
         }
         int startIndex = tmp + 1;
         // commit until
-        while (logId > lastCommittedLogId) {
+        while (logId >= lastCommittedLogId) {
             // append
             committedLog.add(uncommittedLog.get(startIndex));
             lastCommittedLogId++;
@@ -58,6 +58,10 @@ public class MemoryLogRepository implements StorageRepository {
     public synchronized boolean append(LogEntry logEntry) throws LogException {
         // if empty
         if (uncommittedLog.size() == 0) {
+            // not first
+            if (logEntry.getLodId() != 1) {
+                return false;
+            }
             uncommittedLog.add(logEntry);
             return true;
         }

@@ -125,7 +125,7 @@ public class GrpcRaftServer extends AbstractRaftServer {
                 e.printStackTrace();
             }
         }
-        countDownLatch.await(members.size() * 2000, TimeUnit.MICROSECONDS);
+        countDownLatch.await(members.size() * 1500, TimeUnit.MICROSECONDS);
         return count.get() > (members.size() + 1) / 2;
     }
     

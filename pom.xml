@@ -15,6 +15,7 @@
         <module>protocol</module>
         <module>example</module>
         <module>api</module>
+        <module>client</module>
     </modules>
     
     <properties>

@@ -5,6 +5,7 @@ import com.daydreamer.raft.protocol.core.AbstractRaftServer;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
 import com.daydreamer.raft.protocol.core.Protocol;
+import com.daydreamer.raft.protocol.storage.impl.DelegateStorageRepository;
 import com.daydreamer.raft.protocol.storage.impl.MemoryLogRepository;
 
 /**
@@ -25,7 +26,7 @@ public class RaftProtocol implements Protocol {
         // init server
         this.raftServer = new GrpcRaftServer(raftConfigPropertiesReader.getProperties(),
                 raftMemberManager, new GrpcFollowerNotifier(raftMemberManager,
-                raftConfigPropertiesReader.getProperties()), new MemoryLogRepository());
+                raftConfigPropertiesReader.getProperties()), new DelegateStorageRepository(raftMemberManager, new MemoryLogRepository()));
     }
     
     @Override

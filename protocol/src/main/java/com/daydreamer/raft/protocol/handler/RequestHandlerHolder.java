@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p>
  * request handler registry
  */
+@SuppressWarnings("all")
 public class RequestHandlerHolder {
     
     /**
