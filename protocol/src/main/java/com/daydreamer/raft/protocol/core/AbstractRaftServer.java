@@ -1,6 +1,5 @@
 package com.daydreamer.raft.protocol.core;
 
-import com.daydreamer.raft.api.entity.Request;
 import com.daydreamer.raft.common.utils.MsgUtils;
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.entity.Member;
@@ -48,7 +47,7 @@ public abstract class AbstractRaftServer implements Closeable {
     /**
      * last term current node has voted
      */
-    private volatile int lastTermCurrentNodeHasVoted;
+    private volatile int lastTermCurrentNodeHasVoted = -1;
     
     /**
      * raft config
@@ -188,7 +187,7 @@ public abstract class AbstractRaftServer implements Closeable {
         Member self = raftMemberManager.getSelf();
         allMember.forEach(member -> {
             member.setTerm(self.getTerm());
-            member.setLogId(storageRepository.getLastCommittedLogId());
+            member.setLogId(storageRepository.getLastUncommittedLogId());
         });
     }
     

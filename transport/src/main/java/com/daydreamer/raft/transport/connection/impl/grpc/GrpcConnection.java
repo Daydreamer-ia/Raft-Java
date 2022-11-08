@@ -73,10 +73,8 @@ public class GrpcConnection extends Connection {
                 }
                 callBack.onSuccess(response);
             } catch (TimeoutException te) {
-                System.out.println("超时");
                 callBack.onTimeout();
             } catch (Exception e) {
-                System.out.println("失败");
                 callBack.onFail(e);
             }
             return result;

@@ -19,4 +19,6 @@ public class RaftProperty {
     
     public static final String CANDIDATE_WAIT_TIMEOUT = "ddr.raft.candidate-wait-timeout";
     
+    public static final String WRITE_RETRY_TIMES_IF_FAIL = "ddr.raft.write-retry-times";
+    
 }

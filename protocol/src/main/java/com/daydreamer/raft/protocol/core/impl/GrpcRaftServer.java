@@ -6,22 +6,13 @@ import com.daydreamer.raft.protocol.core.AbstractFollowerNotifier;
 import com.daydreamer.raft.protocol.entity.Member;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
 import com.daydreamer.raft.protocol.storage.StorageRepository;
-import com.daydreamer.raft.transport.connection.Connection;
-import com.daydreamer.raft.transport.connection.ResponseCallBack;
-import com.daydreamer.raft.api.entity.Request;
-import com.daydreamer.raft.api.entity.Response;
 import com.daydreamer.raft.api.entity.request.VoteCommitRequest;
 import com.daydreamer.raft.api.entity.request.VoteRequest;
 import com.daydreamer.raft.api.entity.response.VoteCommitResponse;
 import com.daydreamer.raft.api.entity.response.VoteResponse;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
 import java.util.logging.Logger;
 
 /**
@@ -36,9 +27,12 @@ public class GrpcRaftServer extends AbstractRaftServer {
      */
     private Server server;
     
+    private RaftMemberManager raftMemberManager;
+    
     public GrpcRaftServer(RaftConfig raftConfigPath, RaftMemberManager raftMemberManager,
             AbstractFollowerNotifier abstractFollowerNotifier, StorageRepository storageRepository) {
         super(raftConfigPath, raftMemberManager, abstractFollowerNotifier, storageRepository);
+        this.raftMemberManager = raftMemberManager;
     }
     
     @Override
@@ -73,60 +67,16 @@ public class GrpcRaftServer extends AbstractRaftServer {
         refreshCandidateActive();
         // if success half of all
         // then commit
-        if (!batchRequestMembers(new VoteRequest(self.getTerm(), self.getLogId()), response -> {
+        if (!raftMemberManager.batchRequestMembers(new VoteRequest(self.getTerm(), self.getLogId()), response -> {
             // nothing to do
             return ((VoteResponse) response).isVoted();
         })) {
             return false;
         }
-        return batchRequestMembers(new VoteCommitRequest(self.getTerm(), self.getLogId()), response -> {
+        return raftMemberManager.batchRequestMembers(new VoteCommitRequest(self.getTerm(), self.getLogId()), response -> {
             // nothing to do
             return ((VoteCommitResponse) response).isAccepted();
         });
-    }
-    
-    /**
-     * send request to all members
-     *
-     * @param request request
-     * @return whether success half of all
-     */
-    private boolean batchRequestMembers(Request request, Predicate<Response> predicate) throws Exception {
-        List<Member> members = raftMemberManager.getAllMember();
-        // begin to request
-        AtomicInteger count = new AtomicInteger(1);
-        CountDownLatch countDownLatch = new CountDownLatch(members.size());
-        for (Member member : members) {
-            try {
-                Connection connection = member.getConnection();
-                connection.request(request, new ResponseCallBack() {
-                
-                    @Override
-                    public void onSuccess(Response response) {
-                        if (predicate.test(response)) {
-                            count.incrementAndGet();
-                        }
-                        countDownLatch.countDown();
-                    }
-                
-                    @Override
-                    public void onFail(Exception e) {
-                        // nothing to do
-                        countDownLatch.countDown();
-                    }
-                
-                    @Override
-                    public void onTimeout() {
-                        // nothing to do
-                    }
-                });
-            } catch (Exception e) {
-                // nothing to do
-                e.printStackTrace();
-            }
-        }
-        countDownLatch.await(members.size() * 1500, TimeUnit.MICROSECONDS);
-        return count.get() > (members.size() + 1) / 2;
     }
     
     @Override

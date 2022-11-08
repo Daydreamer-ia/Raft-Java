@@ -8,7 +8,7 @@ import java.util.List;
  * @author Daydreamer
  * <p>
  * config about raft
- *
+ * <p>
  * voteBaseTime + ramdom() < heartInterval < abnormalActiveInterval
  */
 public class RaftConfig implements ActiveProperties {
@@ -42,6 +42,19 @@ public class RaftConfig implements ActiveProperties {
      * base wait time in candidate
      */
     private int candidateStatusTimeout = 5000;
+    
+    /**
+     * write fail, then retry <code>writeRetryTimes</code>
+     */
+    private int writeRetryTimes = 2;
+    
+    public int getWriteRetryTimes() {
+        return writeRetryTimes;
+    }
+    
+    public void setWriteRetryTimes(int writeRetryTimes) {
+        this.writeRetryTimes = writeRetryTimes;
+    }
     
     public int getCandidateStatusTimeout() {
         return candidateStatusTimeout;
