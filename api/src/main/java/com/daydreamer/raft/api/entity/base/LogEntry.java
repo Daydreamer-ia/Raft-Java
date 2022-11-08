@@ -1,7 +1,5 @@
 package com.daydreamer.raft.api.entity.base;
 
-import com.daydreamer.raft.api.entity.constant.LogType;
-
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -23,18 +21,12 @@ public class LogEntry implements Serializable {
     /**
      * data
      */
-    private Object data;
+    private Payload payload;
     
-    /**
-     * operation to data
-     */
-    private LogType logType;
-    
-    public LogEntry(int term, long logId, Object data, LogType logType) {
+    public LogEntry(int term, long logId, Payload payload) {
         this.term = term;
         this.logId = logId;
-        this.data = data;
-        this.logType = logType;
+        this.payload = payload;
     }
     
     public LogEntry(int term, long logId) {
@@ -58,20 +50,12 @@ public class LogEntry implements Serializable {
         this.logId = logId;
     }
     
-    public Object getData() {
-        return data;
+    public Payload getPayload() {
+        return payload;
     }
     
-    public void setData(Object data) {
-        this.data = data;
-    }
-    
-    public LogType getLogType() {
-        return logType;
-    }
-    
-    public void setLogType(LogType logType) {
-        this.logType = logType;
+    public void setPayload(Payload payload) {
+        this.payload = payload;
     }
     
     @Override
@@ -93,6 +77,6 @@ public class LogEntry implements Serializable {
     
     @Override
     public String toString() {
-        return "LogEntry{" + "term=" + term + ", lodId=" + logId + ", data=" + data + ", logType=" + logType + '}';
+        return "LogEntry{" + "term=" + term + ", logId=" + logId + ", payload=" + payload + '}';
     }
 }

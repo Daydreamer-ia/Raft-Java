@@ -1,11 +1,14 @@
 package com.daydreamer.raft.protocol.core.impl;
 
+import com.daydreamer.raft.api.entity.Request;
+import com.daydreamer.raft.api.entity.Response;
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.constant.NodeStatus;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
 import com.daydreamer.raft.protocol.entity.Member;
 import com.daydreamer.raft.transport.connection.Connection;
+import com.daydreamer.raft.transport.connection.ResponseCallBack;
 import com.daydreamer.raft.transport.connection.impl.grpc.GrpcConnection;
 import com.daydreamer.raft.api.grpc.RequesterGrpc;
 import io.grpc.ManagedChannel;
@@ -15,11 +18,15 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
  * @author Daydreamer
- *
+ * <p>
  * storge member
  */
 public class MemberManager implements RaftMemberManager {
@@ -38,7 +45,6 @@ public class MemberManager implements RaftMemberManager {
     
     /**
      * init current node member
-     *
      */
     public void initSelf() {
         try {
@@ -52,7 +58,7 @@ public class MemberManager implements RaftMemberManager {
             tmp.setMemberId(ip + ":" + port);
             tmp.setStatus(NodeStatus.UP);
             tmp.setTerm(0);
-            tmp.setLogId(0);
+            tmp.setLogId(-1);
             self = tmp;
         } catch (Exception e) {
             throw new IllegalStateException("[MemberManager] - Fail to init self message!");
@@ -106,9 +112,7 @@ public class MemberManager implements RaftMemberManager {
     
     @Override
     public List<Member> getActiveMember() {
-        return members.stream()
-                .filter(member -> NodeStatus.UP.equals(member.getStatus()))
-                .collect(Collectors.toList());
+        return members.stream().filter(member -> NodeStatus.UP.equals(member.getStatus())).collect(Collectors.toList());
     }
     
     @Override
@@ -129,5 +133,50 @@ public class MemberManager implements RaftMemberManager {
     @Override
     public boolean isLeader() {
         return NodeRole.LEADER.equals(self.getRole());
+    }
+    
+    /**
+     * send request to all members
+     *
+     * @param request request
+     * @return whether success half of all
+     */
+    @Override
+    public boolean batchRequestMembers(Request request, Predicate<Response> predicate) throws Exception {
+        List<Member> members = getAllMember();
+        // begin to request
+        AtomicInteger count = new AtomicInteger(1);
+        CountDownLatch countDownLatch = new CountDownLatch(members.size());
+        for (Member member : members) {
+            try {
+                Connection connection = member.getConnection();
+                connection.request(request, new ResponseCallBack() {
+                    
+                    @Override
+                    public void onSuccess(Response response) {
+                        if (predicate.test(response)) {
+                            count.incrementAndGet();
+                        }
+                        countDownLatch.countDown();
+                    }
+                    
+                    @Override
+                    public void onFail(Exception e) {
+                        // nothing to do
+                        countDownLatch.countDown();
+                    }
+                    
+                    @Override
+                    public void onTimeout() {
+                        // nothing to do
+                    }
+                });
+            } catch (Exception e) {
+                // nothing to do
+                e.printStackTrace();
+            }
+        }
+        countDownLatch.await(members.size() * 2500, TimeUnit.MICROSECONDS);
+        return count.get() > (members.size() + 1) / 2;
     }
 }
