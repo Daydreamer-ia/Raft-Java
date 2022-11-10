@@ -1,9 +1,12 @@
 package com.daydreamer.raft.protocol.core.impl;
 
+import com.daydreamer.raft.api.entity.Response;
 import com.daydreamer.raft.api.entity.base.LogEntry;
 import com.daydreamer.raft.api.entity.base.Payload;
 import com.daydreamer.raft.api.entity.request.AppendEntriesRequest;
+import com.daydreamer.raft.api.entity.request.EntryCommittedRequest;
 import com.daydreamer.raft.api.entity.response.AppendEntriesResponse;
+import com.daydreamer.raft.api.entity.response.ServerErrorResponse;
 import com.daydreamer.raft.common.service.PropertiesReader;
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
@@ -14,10 +17,15 @@ import com.daydreamer.raft.protocol.storage.StorageRepository;
 import com.daydreamer.raft.protocol.storage.impl.DelegateStorageRepository;
 import com.daydreamer.raft.protocol.storage.impl.MemoryLogRepository;
 import com.daydreamer.raft.transport.connection.Connection;
+import com.daydreamer.raft.transport.connection.ResponseCallBack;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -64,7 +72,6 @@ public class RaftProtocol implements Protocol {
         Member self = raftMemberManager.getSelf();
         LogEntry logEntry = new LogEntry(self.getTerm(), self.getLogId() + 1, payload);
         // try to append one
-        AppendEntriesRequest originRequest = buildAppendLogRequest(Collections.singletonList(logEntry));
         int successCount = 0;
         List<Member> finish = new ArrayList<>();
         for (Member member : allMember) {
@@ -72,7 +79,7 @@ public class RaftProtocol implements Protocol {
             while (retryTimes >= 0) {
                 try {
                     // append
-                    if (doAppendLog(member, originRequest)) {
+                    if (doAppendLog(member, logEntry)) {
                         // finish append
                         finish.add(member);
                         successCount++;
@@ -93,33 +100,97 @@ public class RaftProtocol implements Protocol {
                 member.setLogId(logEntry.getLogId());
                 member.setTerm(logEntry.getTerm());
             });
-            return true;
+            EntryCommittedRequest committed = new EntryCommittedRequest(logEntry.getLogId(), logEntry.getTerm());
+            return commit(committed, finish);
         } else {
             return false;
         }
     }
     
     /**
+     * committed
+     *
+     * @param request request
+     * @param members members
+     */
+    private boolean commit(EntryCommittedRequest request, List<Member> members) {
+        CountDownLatch countDownLatch = new CountDownLatch(members.size());
+        AtomicInteger count = new AtomicInteger(0);
+        try {
+            members.forEach(member -> {
+                try {
+                    Connection connection = member.getConnection();
+                    if (connection != null) {
+                        connection.request(request, new ResponseCallBack() {
+                            @Override
+                            public void onSuccess(Response response) {
+                                count.incrementAndGet();
+                                countDownLatch.countDown();
+                            }
+                    
+                            @Override
+                            public void onFail(Exception e) {
+                                countDownLatch.countDown();
+                            }
+                    
+                            @Override
+                            public void onTimeout() {
+                                countDownLatch.countDown();
+                            }
+                        });
+                    }
+                }catch (Exception e) {
+                    // nothing to do
+                }
+            });
+            countDownLatch.await(2500 * members.size(), TimeUnit.MICROSECONDS);
+        } catch (Exception e) {
+            // nothing to do
+        }
+        return count.get() + 1 > (members.size() + 1) / 2;
+    }
+    
+    /**
      * request to member
      *
-     * @param member        member
-     * @param originRequest request
+     * @param member    member
+     * @param newestLog newest Log
      */
-    private boolean doAppendLog(Member member, AppendEntriesRequest originRequest) throws Exception {
+    private boolean doAppendLog(Member member, LogEntry newestLog) throws Exception {
+        // append log request
+        AppendEntriesRequest originRequest = buildAppendLogRequest(Collections.singletonList(newestLog));
         Connection connection = member.getConnection();
         if (connection != null) {
             AppendEntriesResponse response = new AppendEntriesResponse(false);
             // need to syn log
             while (!response.isAccepted()) {
                 member.setLogId(originRequest.getLastLogId() - 1);
-                response = (AppendEntriesResponse) connection.request(originRequest, 3000);
-                if (response == null) {
+                Future<Response> future = connection.request(originRequest);
+                // block wait
+                Response commonResponse = future.get();
+                // member may down
+                // copy log next time
+                if (commonResponse == null) {
                     return false;
+                }
+                // if submit log has committed
+                if (commonResponse instanceof ServerErrorResponse) {
+                    LOGGER.severe("[RaftProtocol] - Node has committed the log, member: " + member.getAddress());
+                    return false;
+                } else if (commonResponse instanceof AppendEntriesResponse) {
+                    response = (AppendEntriesResponse) commonResponse;
                 }
                 // find last log
                 LogEntry lastLog = storageRepository.getLogById(originRequest.getLastLogId() - 1);
-                originRequest.setLastTerm(lastLog.getTerm());
-                originRequest.setLastLogId(lastLog.getLogId());
+                int lastTerm = 0;
+                long lastLogId = -1;
+                if (lastLog.getLogId() - 2 >= 0) {
+                    LogEntry lastLastLog = storageRepository.getLogById(originRequest.getLastLogId() - 2);
+                    lastLogId = lastLastLog.getLogId();
+                    lastTerm = lastLastLog.getTerm();
+                }
+                originRequest.setLastTerm(lastTerm);
+                originRequest.setLastLogId(lastLogId);
                 originRequest.getLogEntries().add(0, lastLog);
             }
             return true;
@@ -134,15 +205,19 @@ public class RaftProtocol implements Protocol {
      */
     private AppendEntriesRequest buildAppendLogRequest(List<LogEntry> logEntries) {
         Member self = raftMemberManager.getSelf();
-        // batch try
         AppendEntriesRequest appendEntriesRequest = new AppendEntriesRequest();
         appendEntriesRequest.setCurrentLogId(self.getLogId());
         appendEntriesRequest.setCurrentTerm(self.getTerm());
         appendEntriesRequest.setLogEntries(logEntries);
         appendEntriesRequest.setPayload(true);
-        LogEntry lastLog = storageRepository.getLogById(logEntries.get(0).getLogId() - 1);
-        appendEntriesRequest.setLastLogId(lastLog.getLogId());
-        appendEntriesRequest.setLastTerm(lastLog.getTerm());
+        long lastLogId = logEntries.get(0).getLogId() - 1;
+        int lastTerm = 0;
+        if (lastLogId >= 0) {
+            LogEntry lastLog = storageRepository.getLogById(lastLogId);
+            lastTerm = lastLog.getTerm();
+        }
+        appendEntriesRequest.setLastLogId(lastLogId);
+        appendEntriesRequest.setLastTerm(lastTerm);
         return appendEntriesRequest;
     }
     

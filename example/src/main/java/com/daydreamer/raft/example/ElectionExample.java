@@ -11,6 +11,7 @@ public class ElectionExample {
     public static void main(String[] args) throws InterruptedException {
         /*
          * start three application with different config to simulate cluster
+         * then they will elect for leader
          */
         Protocol raft = new RaftProtocol("example-server0.properties");
         Protocol raft1 = new RaftProtocol("example-server1.properties");
