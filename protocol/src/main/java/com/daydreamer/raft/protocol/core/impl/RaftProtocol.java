@@ -71,6 +71,7 @@ public class RaftProtocol implements Protocol {
         List<Member> allMember = raftMemberManager.getAllMember();
         Member self = raftMemberManager.getSelf();
         LogEntry logEntry = new LogEntry(self.getTerm(), self.getLogId() + 1, payload);
+        storageRepository.append(logEntry);
         // try to append one
         int successCount = 0;
         List<Member> finish = new ArrayList<>();
@@ -101,10 +102,11 @@ public class RaftProtocol implements Protocol {
                 member.setTerm(logEntry.getTerm());
             });
             EntryCommittedRequest committed = new EntryCommittedRequest(logEntry.getLogId(), logEntry.getTerm());
-            return commit(committed, finish);
-        } else {
-            return false;
+            if (commit(committed, finish)) {
+                storageRepository.commit(logEntry.getTerm(), logEntry.getLogId());
+            }
         }
+        return false;
     }
     
     /**
@@ -181,10 +183,15 @@ public class RaftProtocol implements Protocol {
                     response = (AppendEntriesResponse) commonResponse;
                 }
                 // find last log
+                if (originRequest.getLastLogId() - 1 < 0) {
+                    originRequest.setLastTerm(0);
+                    originRequest.setLastLogId(-1);
+                    continue;
+                }
                 LogEntry lastLog = storageRepository.getLogById(originRequest.getLastLogId() - 1);
                 int lastTerm = 0;
                 long lastLogId = -1;
-                if (lastLog.getLogId() - 2 >= 0) {
+                if (originRequest.getLastLogId() - 2 >= 0) {
                     LogEntry lastLastLog = storageRepository.getLogById(originRequest.getLastLogId() - 2);
                     lastLogId = lastLastLog.getLogId();
                     lastTerm = lastLastLog.getTerm();
