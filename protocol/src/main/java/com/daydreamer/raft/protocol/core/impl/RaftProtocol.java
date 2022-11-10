@@ -104,6 +104,7 @@ public class RaftProtocol implements Protocol {
             EntryCommittedRequest committed = new EntryCommittedRequest(logEntry.getLogId(), logEntry.getTerm());
             if (commit(committed, finish)) {
                 storageRepository.commit(logEntry.getTerm(), logEntry.getLogId());
+                return true;
             }
         }
         return false;
@@ -236,5 +237,10 @@ public class RaftProtocol implements Protocol {
     @Override
     public void run() {
         raftServer.start();
+    }
+    
+    @Override
+    public boolean isStarted() {
+        return raftServer.normalCluster();
     }
 }

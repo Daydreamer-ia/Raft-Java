@@ -5,10 +5,14 @@ import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.exception.LogException;
 import com.daydreamer.raft.protocol.storage.StorageRepository;
 
+import java.util.logging.Logger;
+
 /**
  * @author Daydreamer
  */
 public class DelegateStorageRepository implements StorageRepository {
+    
+    private static final Logger LOGGER = Logger.getLogger(DelegateStorageRepository.class.getSimpleName());
     
     /**
      * raftMemberManager
@@ -30,13 +34,19 @@ public class DelegateStorageRepository implements StorageRepository {
         boolean commit = storageRepository.commit(term, logId);
         if (commit) {
             raftMemberManager.getSelf().setLogId(logId);
+            LOGGER.info("Member: "+ raftMemberManager.getSelf().getAddress() + ", term: " + term + ", log index: " + logId+ " has committed!");
         }
         return commit;
     }
     
     @Override
     public boolean append(LogEntry logEntry) throws LogException {
-        return storageRepository.append(logEntry);
+        boolean append = storageRepository.append(logEntry);
+        if (append) {
+            LOGGER.info("Member: "+ raftMemberManager.getSelf().getAddress() + ", term: " + logEntry.getTerm() + ", log index: " + logEntry.getLogId()
+                    + " append finish!");
+        }
+        return append;
     }
     
     @Override

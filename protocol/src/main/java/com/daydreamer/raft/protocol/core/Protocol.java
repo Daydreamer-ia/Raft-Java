@@ -27,4 +27,11 @@ public interface Protocol {
      * start
      */
     void run();
+    
+    /**
+     * ready to work
+     *
+     * @return whether to work
+     */
+    boolean isStarted();
 }
