@@ -75,7 +75,7 @@ public class SimpleFuture<T> implements Future<T> {
     @Override
     public synchronized T get() throws InterruptedException {
         while (!finish) {
-            wait(1000);
+            wait(200);
         }
         return data;
     }
@@ -85,7 +85,7 @@ public class SimpleFuture<T> implements Future<T> {
         long begin = System.currentTimeMillis();
         long remain = unit.toMillis(timeout);
         while (remain > 0 && !finish) {
-            wait(1000);
+            wait(200);
             remain = remain - (System.currentTimeMillis() - begin);
         }
         return data;
@@ -98,7 +98,7 @@ public class SimpleFuture<T> implements Future<T> {
      */
     public synchronized Exception getException() throws InterruptedException {
         while (!finish) {
-            wait(400);
+            wait(200);
         }
         return throwable;
     }
