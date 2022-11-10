@@ -21,7 +21,7 @@ public class LogCommittedRequestHandler
         int term = request.getTerm();
         if (storageRepository.getLastCommittedLogId() >= request.getLogId()) {
             LogEntry logEntry = storageRepository.getLogById(logId);
-            if (logEntry.getTerm() == term) {
+            if (logEntry != null && logEntry.getTerm() == term) {
                 return new EntryCommittedResponse(true);
             }
         }

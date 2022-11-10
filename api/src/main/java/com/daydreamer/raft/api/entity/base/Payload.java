@@ -13,6 +13,14 @@ public class Payload implements Serializable {
     
     private LogType logType;
     
+    public Payload() {
+    }
+    
+    public Payload(Object object, LogType logType) {
+        this.object = object;
+        this.logType = logType;
+    }
+    
     public Object getObject() {
         return object;
     }

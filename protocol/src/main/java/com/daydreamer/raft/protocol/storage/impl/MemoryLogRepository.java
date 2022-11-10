@@ -43,18 +43,25 @@ public class MemoryLogRepository implements StorageRepository {
     @Override
     public synchronized boolean commit(int term, long logId) throws LogException {
         // no uncommitted log
-        if (lastCommittedLogIndex == -1) {
+        if (lastUncommittedLogId == -1) {
             return false;
+        }
+        // has committed
+        if (lastCommittedLogId == logId) {
+            return true;
         }
         // get last uncommitted log
         LogEntry lastUncommittedLog = logEntriesList.get(lastUncommittedLogIndex);
         // if log id smaller, normal
         if (lastUncommittedLog.getLogId() >= logId) {
+            int committedLogIndex = lastCommittedLogIndex;
+            committedLogIndex++;
             // find log
-            while (logEntriesList.get(lastCommittedLogIndex).getLogId() != logId) {
-                lastUncommittedLogIndex++;
+            while (logEntriesList.get(committedLogIndex).getLogId() != logId) {
+                committedLogIndex++;
             }
-            lastCommittedLogId = logEntriesList.get(lastCommittedLogIndex).getLogId();
+            lastCommittedLogId = logEntriesList.get(committedLogIndex).getLogId();
+            lastCommittedLogIndex = committedLogIndex;
             return true;
         }
         // need more log
@@ -67,7 +74,7 @@ public class MemoryLogRepository implements StorageRepository {
         if (lastUncommittedLogIndex == -1) {
             logEntriesList.add(logEntry);
             lastUncommittedLogIndex++;
-            lastCommittedLogId = logEntry.getLogId();
+            lastUncommittedLogId = logEntry.getLogId();
             return true;
         }
         // find suitable index
@@ -75,18 +82,24 @@ public class MemoryLogRepository implements StorageRepository {
             throw new IllegalArgumentException(
                     "log id: " + logEntry.getLogId() + " has committed, which cannot be modified!");
         }
+        // not linked
+        if (logEntry.getLogId() > lastUncommittedLogId + 1) {
+            return false;
+        }
         int index = lastUncommittedLogIndex;
         while (index > lastCommittedLogIndex
                 && logEntriesList.get(index).getLogId() + 1 != logEntry.getLogId()) {
             index--;
         }
-        if (index < logEntriesList.size()) {
-            logEntriesList.add(index, logEntry);
-        } else {
+        if (index == lastUncommittedLogIndex) {
             logEntriesList.add(logEntry);
+            lastUncommittedLogId = logEntry.getLogId();
+            lastUncommittedLogIndex = index + 1;
+        } else if (index < lastUncommittedLogIndex) {
+            // remove old
+            logEntriesList.add(index + 1, logEntry);
+            logEntriesList.remove(index + 2);
         }
-        lastUncommittedLogId = logEntry.getLogId();
-        lastUncommittedLogIndex = index;
         return true;
     }
     
@@ -132,6 +145,9 @@ public class MemoryLogRepository implements StorageRepository {
     
     @Override
     public LogEntry getLogById(long logId) {
+        if (lastUncommittedLogIndex == -1) {
+            return null;
+        }
         if (lastUncommittedLogId >= logId) {
             int index = lastUncommittedLogIndex;
             while (index >= 0 && logEntriesList.get(index).getLogId() != logId) {

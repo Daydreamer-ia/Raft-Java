@@ -65,8 +65,8 @@ public class AppendEntriesRequestHandler
                             + ", leader last log id: " + request.getLastLogId() + ", current node committed log term: "
                             + lastCommittedLog.getTerm() + ", current node committed log id: " + lastCommittedLog
                             .getLogId());
+            return new ServerErrorResponse(e.getMessage(), ResponseCode.ERROR_SERVER);
         }
-        return new AppendEntriesResponse(false);
     }
     
     @Override
