@@ -261,3 +261,8 @@ Here are my notes in Chinese
 当 `leader` 需要给某个 `follower` 同步一些旧日志，但**这些日志已经被 `leader` 做了快照并删除掉了时，`leader` 就需要把该快照发送给 `follower`**。
 
 同样，当集群中有新节点加入，或者某个节点宕机太久落后了太多日志时，**`leader` 也可以直接发送快照**，大量节约日志传输和回放时间。
+
+## 注意
+对于上一个任期的日志，必须等到本任期的leader新日志提交才能一起提交，防止出现已提交日志被覆盖的情况。
+![image](https://user-images.githubusercontent.com/83362909/201023095-f8f44496-41b0-4c93-b1f5-08847cc5aefd.png)
+
