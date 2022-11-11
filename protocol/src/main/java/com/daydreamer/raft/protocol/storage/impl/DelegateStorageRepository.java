@@ -73,4 +73,9 @@ public class DelegateStorageRepository implements StorageRepository {
     public long getLastUncommittedLogId() {
         return storageRepository.getLastUncommittedLogId();
     }
+    
+    @Override
+    public void close() {
+        storageRepository.close();
+    }
 }

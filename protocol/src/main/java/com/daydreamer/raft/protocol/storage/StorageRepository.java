@@ -2,13 +2,14 @@ package com.daydreamer.raft.protocol.storage;
 
 import com.daydreamer.raft.api.entity.base.LogEntry;
 import com.daydreamer.raft.protocol.exception.LogException;
+import com.daydreamer.raft.transport.connection.Closeable;
 
 /**
  * @author Daydreamer
  * <p>
  * log storage
  */
-public interface StorageRepository {
+public interface StorageRepository extends Closeable {
     
     /**
      * commit

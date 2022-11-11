@@ -40,7 +40,7 @@ public class RaftProtocol implements Protocol {
     
     private AbstractRaftServer raftServer;
     
-    private PropertiesReader<RaftConfig> raftConfigPropertiesReader;
+    private RaftConfig raftConfig;
     
     private RaftMemberManager raftMemberManager;
     
@@ -48,11 +48,12 @@ public class RaftProtocol implements Protocol {
     
     public RaftProtocol(String raftConfigPath) {
         // init reader, avoid gc
-        raftConfigPropertiesReader = new RaftPropertiesReader(raftConfigPath);
+        PropertiesReader<RaftConfig> raftConfigPropertiesReader = new RaftPropertiesReader(raftConfigPath);
         raftMemberManager = new MemberManager(raftConfigPropertiesReader.getProperties());
         storageRepository = new DelegateStorageRepository(raftMemberManager, new MemoryLogRepository());
+        raftConfig = raftConfigPropertiesReader.getProperties();
         // init server
-        this.raftServer = new GrpcRaftServer(raftConfigPropertiesReader.getProperties(), raftMemberManager,
+        this.raftServer = new GrpcRaftServer(raftConfigPropertiesReader, raftMemberManager,
                 new GrpcFollowerNotifier(raftMemberManager, raftConfigPropertiesReader.getProperties()),
                 storageRepository);
     }
@@ -77,7 +78,7 @@ public class RaftProtocol implements Protocol {
         int successCount = 0;
         List<Member> finish = new ArrayList<>();
         for (Member member : allMember) {
-            int retryTimes = raftConfigPropertiesReader.getProperties().getWriteRetryTimes();
+            int retryTimes = raftConfig.getWriteRetryTimes();
             while (retryTimes >= 0) {
                 try {
                     // append
@@ -245,7 +246,7 @@ public class RaftProtocol implements Protocol {
     }
     
     @Override
-    public boolean isStarted() {
-        return raftServer.normalCluster();
+    public void close() {
+        raftServer.close();
     }
 }

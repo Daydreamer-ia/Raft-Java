@@ -162,4 +162,9 @@ public class MemoryLogRepository implements StorageRepository {
     public synchronized long getLastUncommittedLogId() {
         return lastUncommittedLogId;
     }
+    
+    @Override
+    public void close() {
+        // nothing to do
+    }
 }

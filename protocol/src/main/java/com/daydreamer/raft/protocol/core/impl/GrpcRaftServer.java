@@ -1,5 +1,6 @@
 package com.daydreamer.raft.protocol.core.impl;
 
+import com.daydreamer.raft.common.service.PropertiesReader;
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.core.AbstractFollowerNotifier;
@@ -12,6 +13,7 @@ import com.daydreamer.raft.api.entity.response.VoteCommitResponse;
 import com.daydreamer.raft.api.entity.response.VoteResponse;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -27,12 +29,21 @@ public class GrpcRaftServer extends AbstractRaftServer {
      */
     private Server server;
     
+    /**
+     * member manager
+     */
     private RaftMemberManager raftMemberManager;
     
-    public GrpcRaftServer(RaftConfig raftConfigPath, RaftMemberManager raftMemberManager,
+    /**
+     * property reader
+     */
+    private PropertiesReader<RaftConfig> raftPropertiesReader;
+    
+    public GrpcRaftServer(PropertiesReader<RaftConfig> raftPropertiesReader, RaftMemberManager raftMemberManager,
             AbstractFollowerNotifier abstractFollowerNotifier, StorageRepository storageRepository) {
-        super(raftConfigPath, raftMemberManager, abstractFollowerNotifier, storageRepository);
+        super(raftPropertiesReader.getProperties(), raftMemberManager, abstractFollowerNotifier, storageRepository);
         this.raftMemberManager = raftMemberManager;
+        this.raftPropertiesReader = raftPropertiesReader;
     }
     
     @Override
@@ -44,7 +55,8 @@ public class GrpcRaftServer extends AbstractRaftServer {
     protected void doStartServer() {
         try {
             int port = raftConfig.getPort();
-            server = ServerBuilder.forPort(port).addService(new GrpcRequestServerCore(requestHandlerHolder)).build().start();
+            server = ServerBuilder.forPort(port).addService(new GrpcRequestServerCore(requestHandlerHolder)).build()
+                    .start();
             LOGGER.info("[GrpcRaftServer] - Server started, listening on port: " + port);
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 // Use stderr here since the logger may have been reset by its JVM shutdown hook.
@@ -73,10 +85,11 @@ public class GrpcRaftServer extends AbstractRaftServer {
         })) {
             return false;
         }
-        return raftMemberManager.batchRequestMembers(new VoteCommitRequest(self.getTerm(), self.getLogId()), response -> {
-            // nothing to do
-            return ((VoteCommitResponse) response).isAccepted();
-        });
+        return raftMemberManager
+                .batchRequestMembers(new VoteCommitRequest(self.getTerm(), self.getLogId()), response -> {
+                    // nothing to do
+                    return ((VoteCommitResponse) response).isAccepted();
+                });
     }
     
     @Override
@@ -87,8 +100,14 @@ public class GrpcRaftServer extends AbstractRaftServer {
     @Override
     public void close() {
         try {
+            // close super
+            super.close();
+            // close sub
             if (server != null) {
                 server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
+            }
+            if (raftPropertiesReader != null) {
+                raftPropertiesReader.close();
             }
         } catch (Exception e) {
             throw new IllegalStateException(

@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 /**
  * @author Daydreamer
  */
-public abstract class AbstractRaftServer implements Closeable {
+public abstract class AbstractRaftServer {
     
     private static final Logger LOGGER = Logger.getLogger(AbstractRaftServer.class.getSimpleName());
     
@@ -245,5 +245,14 @@ public abstract class AbstractRaftServer implements Closeable {
      */
     public int getLastTermCurrentNodeHasVoted() {
         return lastTermCurrentNodeHasVoted;
+    }
+    
+    /**
+     * close
+     */
+    public void close() {
+        raftMemberManager.close();
+        abstractFollowerNotifier.close();
+        storageRepository.close();
     }
 }

@@ -132,6 +132,13 @@ public abstract class PropertiesReader<T extends ActiveProperties> {
     }
     
     /**
+     * close
+     */
+    public void close() {
+        executorService.shutdown();
+    }
+    
+    /**
      * base on the properties to do some
      *
      * @param properties       properties

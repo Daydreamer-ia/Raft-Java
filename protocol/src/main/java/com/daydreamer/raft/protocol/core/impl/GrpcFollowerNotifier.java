@@ -81,4 +81,9 @@ public class GrpcFollowerNotifier extends AbstractFollowerNotifier {
             e.printStackTrace();
         }
     }
+    
+    @Override
+    public void close() {
+        executor.shutdown();
+    }
 }

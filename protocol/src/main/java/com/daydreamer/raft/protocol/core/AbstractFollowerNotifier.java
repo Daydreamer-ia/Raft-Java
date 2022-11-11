@@ -1,6 +1,8 @@
 package com.daydreamer.raft.protocol.core;
 
 import com.daydreamer.raft.protocol.entity.RaftConfig;
+import com.daydreamer.raft.transport.connection.Closeable;
+
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -10,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p>
  * It is a manager to retain connection
  */
-public abstract class AbstractFollowerNotifier {
+public abstract class AbstractFollowerNotifier implements Closeable {
     
     /**
      * member manager
