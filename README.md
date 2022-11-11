@@ -7,7 +7,7 @@ Study base on MIT 6.824 raft course. I implement it according to my own ideas, s
   <img src="https://img.shields.io/badge/platform-java-9cf" />
  <img src="https://img.shields.io/badge/version-1.8-yellowgreen"/>
  <br/>
-<img src="https://img.shields.io/github/last-commit/Ritusan/color-library" alt="last-commit" />
+<img src="https://img.shields.io/github/last-commit/Daydreamer-ia/Raft-Java" alt="last-commit" />
 <img src="https://img.shields.io/badge/author-Daydreamer--ia-orange" alt="languages-top" /><br/><br/>
 Here are my notes in Chinese: 
 ## 概念
