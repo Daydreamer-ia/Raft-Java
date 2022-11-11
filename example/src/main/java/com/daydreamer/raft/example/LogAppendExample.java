@@ -16,10 +16,15 @@ public class LogAppendExample {
     
     public static void main(String[] args) throws InterruptedException {
         List<Protocol> cluster = getCluster();
-        // append log
+        // start
+        cluster.forEach(Protocol::run);
+        // append log if wait until 30 sec
         Thread appendLogThread = new Thread(getTask(cluster));
         appendLogThread.start();
-        Thread.sleep(120 * 1000);
+        // wait for append
+        Thread.sleep(60 * 1000);
+        // close
+        cluster.forEach(Protocol::close);
     }
     
     /**
@@ -61,12 +66,9 @@ public class LogAppendExample {
          * start three application with different config to simulate cluster
          * then they will elect for leader
          */
-        Protocol raft = new RaftProtocol("example-server0.properties");
-        Protocol raft1 = new RaftProtocol("example-server1.properties");
-        Protocol raft2 = new RaftProtocol("example-server2.properties");
-        raft.run();
-        raft1.run();
-        raft2.run();
-        return Stream.of(raft, raft1, raft2).collect(Collectors.toList());
+        return Stream.of(new RaftProtocol("example-server0.properties"),
+                        new RaftProtocol("example-server1.properties"),
+                        new RaftProtocol("example-server2.properties"))
+                .collect(Collectors.toList());
     }
 }
