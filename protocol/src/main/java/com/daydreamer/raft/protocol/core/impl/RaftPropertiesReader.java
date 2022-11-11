@@ -8,14 +8,14 @@ import org.apache.commons.lang.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 
 /**
  * @author Daydreamer
  */
 public class RaftPropertiesReader extends PropertiesReader<RaftConfig> {
     
-    private static final Logger LOGGER = Logger.getLogger(RaftPropertiesReader.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(RaftPropertiesReader.class);
     
     public RaftPropertiesReader(String filePath) {
         super(filePath, new RaftConfig());
@@ -33,7 +33,7 @@ public class RaftPropertiesReader extends PropertiesReader<RaftConfig> {
                 }
                 activeProperties.setMemberAddresses(addresses);
             } else {
-                LOGGER.warning("[RaftPropertiesReader] - Current version don't allow to change members, excuse please!");
+                LOGGER.warn("Current version don't allow to change members, excuse please!");
             }
             String heartbeat = properties.getProperty(RaftProperty.LEADER_HEARTBEAT);
             if (StringUtils.isNotBlank(heartbeat)) {
@@ -45,8 +45,8 @@ public class RaftPropertiesReader extends PropertiesReader<RaftConfig> {
                 int p = Integer.parseInt(port);
                 activeProperties.setPort(p);
             } else {
-                LOGGER.warning(
-                        "[RaftPropertiesReader] - Server port cannot be modified! You can restart server if you want to take it effect.");
+                LOGGER.warn(
+                        "Server port cannot be modified! You can restart server if you want to take it effect.");
             }
             String abnormalInternal = properties.getProperty(RaftProperty.ABNORMAL_LEADER_ACTIVE_INTERNAL);
             if (StringUtils.isNotBlank(abnormalInternal)) {
@@ -65,7 +65,7 @@ public class RaftPropertiesReader extends PropertiesReader<RaftConfig> {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            LOGGER.severe("[RaftPropertiesReader] - Fail to update properties, because: " + e.getMessage());
+            LOGGER.error("Fail to update properties, because: " + e.getMessage());
         }
     }
 }

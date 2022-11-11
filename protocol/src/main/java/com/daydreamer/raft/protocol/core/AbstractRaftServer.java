@@ -16,14 +16,14 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 
 /**
  * @author Daydreamer
  */
 public abstract class AbstractRaftServer {
     
-    private static final Logger LOGGER = Logger.getLogger(AbstractRaftServer.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(AbstractRaftServer.class);
     
     /**
      * if there is a leader in cluster
@@ -161,12 +161,12 @@ public abstract class AbstractRaftServer {
                             // syn log id
                             synAllMember();
                             normalCluster.compareAndSet(false, true);
-                            LOGGER.info("[AbstractRaftServer] - Server node has been leader, member: " + raftMemberManager.getSelf().getAddress());
+                            LOGGER.info("Server node has been leader, member: " + raftMemberManager.getSelf().getAddress());
                         }
                     }
                 }
             } catch (Exception e) {
-                LOGGER.severe("[AbstractRaftServer] - Fail to do vote, because " + e.getLocalizedMessage());
+                LOGGER.error("Fail to do vote, because " + e.getLocalizedMessage());
             }
         });
     }

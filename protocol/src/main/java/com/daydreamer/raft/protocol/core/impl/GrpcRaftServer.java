@@ -15,14 +15,14 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 
 /**
  * @author Daydreamer
  */
 public class GrpcRaftServer extends AbstractRaftServer {
     
-    private static final Logger LOGGER = Logger.getLogger(GrpcRaftServer.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(GrpcRaftServer.class);
     
     /**
      * server
@@ -57,13 +57,7 @@ public class GrpcRaftServer extends AbstractRaftServer {
             int port = raftConfig.getPort();
             server = ServerBuilder.forPort(port).addService(new GrpcRequestServerCore(requestHandlerHolder)).build()
                     .start();
-            LOGGER.info("[GrpcRaftServer] - Server started, listening on port: " + port);
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                // Use stderr here since the logger may have been reset by its JVM shutdown hook.
-                LOGGER.info("[GrpcRaftServer] - shutting down gRPC server since JVM is shutting down...");
-                this.close();
-                LOGGER.info("[GrpcRaftServer] - server shut down");
-            }));
+            LOGGER.info("Server started, listening on port: " + port);
         } catch (Exception e) {
             throw new IllegalStateException(
                     "[GrpcRaftServer] - Fail to init server, because " + e.getLocalizedMessage());

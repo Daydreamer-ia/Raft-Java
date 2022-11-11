@@ -27,7 +27,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 
 /**
  * @author Daydreamer
@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  */
 public class RaftProtocol implements Protocol {
     
-    private static final Logger LOGGER = Logger.getLogger(RaftProtocol.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(RaftProtocol.class);
     
     private AbstractRaftServer raftServer;
     
@@ -184,7 +184,7 @@ public class RaftProtocol implements Protocol {
                 }
                 // if submit log has committed
                 if (commonResponse instanceof ServerErrorResponse) {
-                    LOGGER.severe("[RaftProtocol] - Node has committed the log, member: " + member.getAddress());
+                    LOGGER.error("Node has committed the log, member: " + member.getAddress());
                     return false;
                 } else if (commonResponse instanceof AppendEntriesResponse) {
                     response = (AppendEntriesResponse) commonResponse;
@@ -248,5 +248,6 @@ public class RaftProtocol implements Protocol {
     @Override
     public void close() {
         raftServer.close();
+        LOGGER.info("Close finish!");
     }
 }

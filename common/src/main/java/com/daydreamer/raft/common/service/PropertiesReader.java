@@ -1,6 +1,7 @@
 package com.daydreamer.raft.common.service;
 
 import com.daydreamer.raft.common.utils.MD5Utils;
+import org.apache.log4j.Logger;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -13,14 +14,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 /**
  * @author Daydreamer
  */
 public abstract class PropertiesReader<T extends ActiveProperties> {
     
-    private static final Logger LOGGER = Logger.getLogger(PropertiesReader.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(PropertiesReader.class);
     
     /**
      * target file
@@ -50,7 +50,7 @@ public abstract class PropertiesReader<T extends ActiveProperties> {
             thread.setDaemon(true);
             thread.setName("Watch-Dog-Thread-For-File: " + filePath);
             thread.setUncaughtExceptionHandler((t, e) -> {
-                LOGGER.severe("[PropertiesReader] - Fail to execute watch job, because: " + e.getLocalizedMessage());
+                LOGGER.error("Fail to execute watch job, because: " + e.getLocalizedMessage());
             });
             return thread;
         });
@@ -89,7 +89,7 @@ public abstract class PropertiesReader<T extends ActiveProperties> {
             // calculate hash
             hash = MD5Utils.getFileMD5String(file);
         } catch (Exception e) {
-            LOGGER.severe("[PropertiesReader] - Fail to load properties, because: " + e.getLocalizedMessage());
+            LOGGER.error("Fail to load properties, because: " + e.getLocalizedMessage());
         } finally {
             if (in != null) {
                 try {

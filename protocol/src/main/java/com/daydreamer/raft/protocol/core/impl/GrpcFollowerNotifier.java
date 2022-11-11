@@ -13,7 +13,7 @@ import com.daydreamer.raft.api.entity.request.HeartbeatRequest;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 
 /**
  * @author Daydreamer
@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  */
 public class GrpcFollowerNotifier extends AbstractFollowerNotifier {
     
-    private static final Logger LOGGER = Logger.getLogger(GrpcFollowerNotifier.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(GrpcFollowerNotifier.class);
     
     public GrpcFollowerNotifier(RaftMemberManager raftMemberManager, RaftConfig raftConfig) {
         super(raftMemberManager, raftConfig);
@@ -69,7 +69,7 @@ public class GrpcFollowerNotifier extends AbstractFollowerNotifier {
                             }
                         }
                     } catch (Exception e) {
-                        LOGGER.severe("[GrpcConnectionManager] - Schedule error when check connection, because " + e
+                        LOGGER.error("Schedule error when check connection, because " + e
                                 .getLocalizedMessage() + ". current member" + member.getAddress());
                     }
                 });
