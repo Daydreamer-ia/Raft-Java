@@ -5,14 +5,14 @@ import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.exception.LogException;
 import com.daydreamer.raft.protocol.storage.StorageRepository;
 
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 
 /**
  * @author Daydreamer
  */
 public class DelegateStorageRepository implements StorageRepository {
     
-    private static final Logger LOGGER = Logger.getLogger(DelegateStorageRepository.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(DelegateStorageRepository.class);
     
     /**
      * raftMemberManager
@@ -72,5 +72,10 @@ public class DelegateStorageRepository implements StorageRepository {
     @Override
     public long getLastUncommittedLogId() {
         return storageRepository.getLastUncommittedLogId();
+    }
+    
+    @Override
+    public void close() {
+        storageRepository.close();
     }
 }

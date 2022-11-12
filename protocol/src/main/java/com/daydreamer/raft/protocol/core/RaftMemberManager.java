@@ -3,6 +3,7 @@ package com.daydreamer.raft.protocol.core;
 import com.daydreamer.raft.api.entity.Request;
 import com.daydreamer.raft.api.entity.Response;
 import com.daydreamer.raft.protocol.entity.Member;
+import com.daydreamer.raft.transport.connection.Closeable;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -12,7 +13,7 @@ import java.util.function.Predicate;
  * <p>
  * It is used to hold the message of member
  */
-public interface RaftMemberManager {
+public interface RaftMemberManager extends Closeable {
     
     /**
      * init manager

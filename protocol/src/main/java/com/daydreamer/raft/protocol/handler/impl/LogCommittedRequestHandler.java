@@ -10,7 +10,7 @@ import com.daydreamer.raft.protocol.aware.StorageRepositoryAware;
 import com.daydreamer.raft.protocol.handler.RequestHandler;
 import com.daydreamer.raft.protocol.storage.StorageRepository;
 
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 
 /**
  * @author Daydreamer
@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 public class LogCommittedRequestHandler
         implements RequestHandler<EntryCommittedRequest, Response>, StorageRepositoryAware {
     
-    private static final Logger LOGGER = Logger.getLogger(LogCommittedRequestHandler.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(LogCommittedRequestHandler.class);
     
     private StorageRepository storageRepository;
     
@@ -36,7 +36,7 @@ public class LogCommittedRequestHandler
             }
             return new EntryCommittedResponse(false);
         } catch (Exception e) {
-            LOGGER.severe("[LogCommittedRequestHandler] - Fail to commit log, because: "+ e.getMessage());
+            LOGGER.error("Fail to commit log, because: "+ e.getMessage());
             return new ServerErrorResponse(e.getMessage(), ResponseCode.ERROR_SERVER);
         }
     }

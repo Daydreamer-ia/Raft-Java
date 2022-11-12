@@ -7,14 +7,14 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 
 /**
  * @author Daydreamer
  */
 public class MD5Utils {
     
-    private static final Logger LOGGER = Logger.getLogger(MD5Utils.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(MD5Utils.class);
     
     private MD5Utils() {
     }
@@ -27,7 +27,7 @@ public class MD5Utils {
         try {
             messagedigest = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException nsaex) {
-            LOGGER.severe("[MD5Utils] - Not support MD5 algorithm, cannot detect file change!");
+            LOGGER.error("Not support MD5 algorithm, cannot detect file change!");
         }
     }
     

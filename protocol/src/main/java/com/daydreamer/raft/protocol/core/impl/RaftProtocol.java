@@ -27,7 +27,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 
 /**
  * @author Daydreamer
@@ -36,11 +36,11 @@ import java.util.logging.Logger;
  */
 public class RaftProtocol implements Protocol {
     
-    private static final Logger LOGGER = Logger.getLogger(RaftProtocol.class.getSimpleName());
+    private static final Logger LOGGER = Logger.getLogger(RaftProtocol.class);
     
     private AbstractRaftServer raftServer;
     
-    private PropertiesReader<RaftConfig> raftConfigPropertiesReader;
+    private RaftConfig raftConfig;
     
     private RaftMemberManager raftMemberManager;
     
@@ -48,11 +48,12 @@ public class RaftProtocol implements Protocol {
     
     public RaftProtocol(String raftConfigPath) {
         // init reader, avoid gc
-        raftConfigPropertiesReader = new RaftPropertiesReader(raftConfigPath);
+        PropertiesReader<RaftConfig> raftConfigPropertiesReader = new RaftPropertiesReader(raftConfigPath);
         raftMemberManager = new MemberManager(raftConfigPropertiesReader.getProperties());
         storageRepository = new DelegateStorageRepository(raftMemberManager, new MemoryLogRepository());
+        raftConfig = raftConfigPropertiesReader.getProperties();
         // init server
-        this.raftServer = new GrpcRaftServer(raftConfigPropertiesReader.getProperties(), raftMemberManager,
+        this.raftServer = new GrpcRaftServer(raftConfigPropertiesReader, raftMemberManager,
                 new GrpcFollowerNotifier(raftMemberManager, raftConfigPropertiesReader.getProperties()),
                 storageRepository);
     }
@@ -77,7 +78,7 @@ public class RaftProtocol implements Protocol {
         int successCount = 0;
         List<Member> finish = new ArrayList<>();
         for (Member member : allMember) {
-            int retryTimes = raftConfigPropertiesReader.getProperties().getWriteRetryTimes();
+            int retryTimes = raftConfig.getWriteRetryTimes();
             while (retryTimes >= 0) {
                 try {
                     // append
@@ -183,7 +184,7 @@ public class RaftProtocol implements Protocol {
                 }
                 // if submit log has committed
                 if (commonResponse instanceof ServerErrorResponse) {
-                    LOGGER.severe("[RaftProtocol] - Node has committed the log, member: " + member.getAddress());
+                    LOGGER.error("Node has committed the log, member: " + member.getAddress());
                     return false;
                 } else if (commonResponse instanceof AppendEntriesResponse) {
                     response = (AppendEntriesResponse) commonResponse;
@@ -245,7 +246,8 @@ public class RaftProtocol implements Protocol {
     }
     
     @Override
-    public boolean isStarted() {
-        return raftServer.normalCluster();
+    public void close() {
+        raftServer.close();
+        LOGGER.info("Close finish!");
     }
 }

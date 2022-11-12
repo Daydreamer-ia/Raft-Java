@@ -179,4 +179,13 @@ public class MemberManager implements RaftMemberManager {
         countDownLatch.await(members.size() * 2500, TimeUnit.MICROSECONDS);
         return count.get() > (members.size() + 1) / 2;
     }
+    
+    @Override
+    public void close() {
+        getAllMember().forEach(member -> {
+            if (member.getConnection() != null) {
+                member.getConnection().close();
+            }
+        });
+    }
 }
