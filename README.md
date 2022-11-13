@@ -1,6 +1,8 @@
 # Raft-Java
 Study base on MIT 6.824 raft course. I implement it according to my own ideas, so some things may be different from raft standard.
-<br/><br/><br/>
+<br/>
+ <a href="https://ramcloud.atlassian.net/wiki/download/attachments/6586375/raft.pdf">Quick download raft dissertation</a>
+<br/><br/>
  [![Raft](https://user-images.githubusercontent.com/83362909/201148733-a9b4ebcf-5b15-4a70-a778-37f298ccf28f.jpg)](http://thesecretlivesofdata.com/raft/#home) 
  <br/>
  [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
