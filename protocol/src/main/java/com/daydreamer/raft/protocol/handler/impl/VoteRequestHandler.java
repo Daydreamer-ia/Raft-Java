@@ -8,7 +8,7 @@ import com.daydreamer.raft.protocol.aware.RaftMemberManagerAware;
 import com.daydreamer.raft.protocol.aware.RaftServerAware;
 import com.daydreamer.raft.api.entity.request.VoteRequest;
 import com.daydreamer.raft.api.entity.response.VoteResponse;
-import com.daydreamer.raft.protocol.storage.StorageRepository;
+import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 
 /**
  * @author Daydreamer
@@ -32,7 +32,7 @@ public class VoteRequestHandler implements RequestHandler<VoteRequest, VoteRespo
     /**
      * log storage
      */
-    private StorageRepository storageRepository;
+    private ReplicatedStateMachine replicatedStateMachine;
     
     @Override
     public synchronized VoteResponse handle(VoteRequest request) {
@@ -44,7 +44,7 @@ public class VoteRequestHandler implements RequestHandler<VoteRequest, VoteRespo
         int term = request.getTerm();
         long logIndex = request.getLogIndex();
         // wait log committed finish
-        synchronized (storageRepository) {
+        synchronized (replicatedStateMachine) {
             // lower term
             if (term < raftMemberManager.getSelf().getLogId()) {
                 return new VoteResponse(false);
@@ -77,7 +77,7 @@ public class VoteRequestHandler implements RequestHandler<VoteRequest, VoteRespo
     }
     
     @Override
-    public void setStorageRepository(StorageRepository storageRepository) {
-        this.storageRepository = storageRepository;
+    public void setReplicatedStateMachine(ReplicatedStateMachine replicatedStateMachine) {
+        this.replicatedStateMachine = replicatedStateMachine;
     }
 }

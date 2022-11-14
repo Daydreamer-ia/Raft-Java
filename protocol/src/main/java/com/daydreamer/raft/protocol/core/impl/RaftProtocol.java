@@ -14,9 +14,9 @@ import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.entity.Member;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
 import com.daydreamer.raft.protocol.core.Protocol;
-import com.daydreamer.raft.protocol.storage.StorageRepository;
-import com.daydreamer.raft.protocol.storage.impl.DelegateStorageRepository;
-import com.daydreamer.raft.protocol.storage.impl.MemoryLogRepository;
+import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
+import com.daydreamer.raft.protocol.storage.impl.DelegateReplicatedStateMachine;
+import com.daydreamer.raft.protocol.storage.impl.MemoryReplicatedStateMachine;
 import com.daydreamer.raft.transport.connection.Connection;
 import com.daydreamer.raft.transport.connection.ResponseCallBack;
 
@@ -44,18 +44,18 @@ public class RaftProtocol implements Protocol {
     
     private RaftMemberManager raftMemberManager;
     
-    private StorageRepository storageRepository;
+    private ReplicatedStateMachine replicatedStateMachine;
     
     public RaftProtocol(String raftConfigPath) {
         // init reader, avoid gc
         PropertiesReader<RaftConfig> raftConfigPropertiesReader = new RaftPropertiesReader(raftConfigPath);
         raftMemberManager = new MemberManager(raftConfigPropertiesReader.getProperties());
-        storageRepository = new DelegateStorageRepository(raftMemberManager, new MemoryLogRepository());
+        replicatedStateMachine = new DelegateReplicatedStateMachine(raftMemberManager, new MemoryReplicatedStateMachine());
         raftConfig = raftConfigPropertiesReader.getProperties();
         // init server
         this.raftServer = new GrpcRaftServer(raftConfigPropertiesReader, raftMemberManager,
                 new GrpcFollowerNotifier(raftMemberManager, raftConfigPropertiesReader.getProperties()),
-                storageRepository);
+                replicatedStateMachine);
     }
     
     @Override
@@ -73,7 +73,7 @@ public class RaftProtocol implements Protocol {
         List<Member> allMember = raftMemberManager.getAllMember();
         Member self = raftMemberManager.getSelf();
         LogEntry logEntry = new LogEntry(self.getTerm(), self.getLogId() + 1, payload);
-        storageRepository.append(logEntry);
+        replicatedStateMachine.append(logEntry);
         // try to append one
         int successCount = 0;
         List<Member> finish = new ArrayList<>();
@@ -105,7 +105,7 @@ public class RaftProtocol implements Protocol {
             });
             EntryCommittedRequest committed = new EntryCommittedRequest(logEntry.getLogId(), logEntry.getTerm());
             if (commit(committed, finish)) {
-                storageRepository.commit(logEntry.getTerm(), logEntry.getLogId());
+                replicatedStateMachine.commit(logEntry.getTerm(), logEntry.getLogId());
                 return true;
             }
         }
@@ -195,11 +195,11 @@ public class RaftProtocol implements Protocol {
                     originRequest.setLastLogId(-1);
                     continue;
                 }
-                LogEntry lastLog = storageRepository.getLogById(originRequest.getLastLogId() - 1);
+                LogEntry lastLog = replicatedStateMachine.getLogById(originRequest.getLastLogId() - 1);
                 int lastTerm = 0;
                 long lastLogId = -1;
                 if (originRequest.getLastLogId() - 2 >= 0) {
-                    LogEntry lastLastLog = storageRepository.getLogById(originRequest.getLastLogId() - 2);
+                    LogEntry lastLastLog = replicatedStateMachine.getLogById(originRequest.getLastLogId() - 2);
                     lastLogId = lastLastLog.getLogId();
                     lastTerm = lastLastLog.getTerm();
                 }
@@ -227,7 +227,7 @@ public class RaftProtocol implements Protocol {
         long lastLogId = logEntries.get(0).getLogId() - 1;
         int lastTerm = 0;
         if (lastLogId >= 0) {
-            LogEntry lastLog = storageRepository.getLogById(lastLogId);
+            LogEntry lastLog = replicatedStateMachine.getLogById(lastLogId);
             lastTerm = lastLog.getTerm();
         }
         appendEntriesRequest.setLastLogId(lastLogId);

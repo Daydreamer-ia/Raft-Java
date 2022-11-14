@@ -8,7 +8,7 @@ import com.daydreamer.raft.api.entity.response.EntryCommittedResponse;
 import com.daydreamer.raft.api.entity.response.ServerErrorResponse;
 import com.daydreamer.raft.protocol.aware.StorageRepositoryAware;
 import com.daydreamer.raft.protocol.handler.RequestHandler;
-import com.daydreamer.raft.protocol.storage.StorageRepository;
+import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 
 import org.apache.log4j.Logger;
 
@@ -20,17 +20,17 @@ public class LogCommittedRequestHandler
     
     private static final Logger LOGGER = Logger.getLogger(LogCommittedRequestHandler.class);
     
-    private StorageRepository storageRepository;
+    private ReplicatedStateMachine replicatedStateMachine;
     
     @Override
     public synchronized Response handle(EntryCommittedRequest request) {
         try {
             long logId = request.getLogId();
             int term = request.getTerm();
-            if (storageRepository.getLastUncommittedLogId() >= request.getLogId()) {
-                LogEntry logEntry = storageRepository.getLogById(logId);
+            if (replicatedStateMachine.getLastUncommittedLogId() >= request.getLogId()) {
+                LogEntry logEntry = replicatedStateMachine.getLogById(logId);
                 if (logEntry != null && logEntry.getTerm() == term) {
-                    storageRepository.commit(term, logId);
+                    replicatedStateMachine.commit(term, logId);
                     return new EntryCommittedResponse(true);
                 }
             }
@@ -47,7 +47,7 @@ public class LogCommittedRequestHandler
     }
     
     @Override
-    public void setStorageRepository(StorageRepository storageRepository) {
-        this.storageRepository = storageRepository;
+    public void setReplicatedStateMachine(ReplicatedStateMachine replicatedStateMachine) {
+        this.replicatedStateMachine = replicatedStateMachine;
     }
 }

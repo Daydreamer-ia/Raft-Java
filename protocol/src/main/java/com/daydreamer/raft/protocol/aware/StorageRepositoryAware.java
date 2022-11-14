@@ -1,6 +1,6 @@
 package com.daydreamer.raft.protocol.aware;
 
-import com.daydreamer.raft.protocol.storage.StorageRepository;
+import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 
 /**
  * @author Daydreamer
@@ -10,7 +10,7 @@ public interface StorageRepositoryAware {
     /**
      * setter for StorageRepositoryAware
      *
-     * @param storageRepository StorageRepository
+     * @param replicatedStateMachine StorageRepository
      */
-    void setStorageRepository(StorageRepository storageRepository);
+    void setReplicatedStateMachine(ReplicatedStateMachine replicatedStateMachine);
 }

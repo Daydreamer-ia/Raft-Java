@@ -6,7 +6,7 @@ import com.daydreamer.raft.protocol.aware.StorageRepositoryAware;
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.aware.RaftMemberManagerAware;
-import com.daydreamer.raft.protocol.storage.StorageRepository;
+import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 import com.daydreamer.raft.transport.constant.ResponseRepository;
 import com.daydreamer.raft.api.entity.Request;
 import com.daydreamer.raft.api.entity.Response;
@@ -42,7 +42,7 @@ public class RequestHandlerHolder {
     
     private AbstractRaftServer abstractRaftServer;
     
-    private StorageRepository storageRepository;
+    private ReplicatedStateMachine replicatedStateMachine;
     
     /**
      * whether init
@@ -54,14 +54,14 @@ public class RequestHandlerHolder {
      * scan package and init
      *
      * @param raftMemberManager  raftMemberManager
-     * @param storageRepository  storageRepository
+     * @param replicatedStateMachine  storageRepository
      * @param abstractRaftServer abstractRaftServer
      */
     public RequestHandlerHolder(RaftMemberManager raftMemberManager, AbstractRaftServer abstractRaftServer,
-            StorageRepository storageRepository) {
+            ReplicatedStateMachine replicatedStateMachine) {
         this.raftMemberManager = raftMemberManager;
         this.abstractRaftServer = abstractRaftServer;
-        this.storageRepository = storageRepository;
+        this.replicatedStateMachine = replicatedStateMachine;
     }
     
     /**
@@ -109,7 +109,7 @@ public class RequestHandlerHolder {
             ((RaftServerAware) handler).setRaftServer(abstractRaftServer);
         }
         if (handler instanceof StorageRepositoryAware) {
-            ((StorageRepositoryAware) handler).setStorageRepository(storageRepository);
+            ((StorageRepositoryAware) handler).setReplicatedStateMachine(replicatedStateMachine);
         }
     }
     
