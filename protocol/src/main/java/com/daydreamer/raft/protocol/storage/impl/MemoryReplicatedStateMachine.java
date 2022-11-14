@@ -2,7 +2,7 @@ package com.daydreamer.raft.protocol.storage.impl;
 
 import com.daydreamer.raft.api.entity.base.LogEntry;
 import com.daydreamer.raft.protocol.exception.LogException;
-import com.daydreamer.raft.protocol.storage.StorageRepository;
+import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,7 +13,7 @@ import java.util.List;
  * <p>
  * storage in memory. its max log id is Integer.MAX_VALUE - 1
  */
-public class MemoryLogRepository implements StorageRepository {
+public class MemoryReplicatedStateMachine implements ReplicatedStateMachine {
     
     /**
      * uncommitted logs

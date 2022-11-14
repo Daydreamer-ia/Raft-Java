@@ -3,16 +3,16 @@ package com.daydreamer.raft.protocol.storage.impl;
 import com.daydreamer.raft.api.entity.base.LogEntry;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.exception.LogException;
-import com.daydreamer.raft.protocol.storage.StorageRepository;
+import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 
 import org.apache.log4j.Logger;
 
 /**
  * @author Daydreamer
  */
-public class DelegateStorageRepository implements StorageRepository {
+public class DelegateReplicatedStateMachine implements ReplicatedStateMachine {
     
-    private static final Logger LOGGER = Logger.getLogger(DelegateStorageRepository.class);
+    private static final Logger LOGGER = Logger.getLogger(DelegateReplicatedStateMachine.class);
     
     /**
      * raftMemberManager
@@ -22,16 +22,16 @@ public class DelegateStorageRepository implements StorageRepository {
     /**
      * storageRepository
      */
-    private StorageRepository storageRepository;
+    private ReplicatedStateMachine replicatedStateMachine;
     
-    public DelegateStorageRepository(RaftMemberManager raftMemberManager, StorageRepository storageRepository) {
+    public DelegateReplicatedStateMachine(RaftMemberManager raftMemberManager, ReplicatedStateMachine replicatedStateMachine) {
         this.raftMemberManager = raftMemberManager;
-        this.storageRepository = storageRepository;
+        this.replicatedStateMachine = replicatedStateMachine;
     }
     
     @Override
     public boolean commit(int term, long logId) throws LogException {
-        boolean commit = storageRepository.commit(term, logId);
+        boolean commit = replicatedStateMachine.commit(term, logId);
         if (commit) {
             raftMemberManager.getSelf().setLogId(logId);
             LOGGER.info("Member: "+ raftMemberManager.getSelf().getAddress() + ", term: " + term + ", log index: " + logId+ " has committed!");
@@ -41,7 +41,7 @@ public class DelegateStorageRepository implements StorageRepository {
     
     @Override
     public boolean append(LogEntry logEntry) throws LogException {
-        boolean append = storageRepository.append(logEntry);
+        boolean append = replicatedStateMachine.append(logEntry);
         if (append) {
             LOGGER.info("Member: "+ raftMemberManager.getSelf().getAddress() + ", term: " + logEntry.getTerm() + ", log index: " + logEntry.getLogId()
                     + " append finish!");
@@ -51,31 +51,31 @@ public class DelegateStorageRepository implements StorageRepository {
     
     @Override
     public LogEntry getCommittedLog(long logId) {
-        return storageRepository.getCommittedLog(logId);
+        return replicatedStateMachine.getCommittedLog(logId);
     }
     
     @Override
     public LogEntry getUncommittedLog(long logId) {
-        return storageRepository.getUncommittedLog(logId);
+        return replicatedStateMachine.getUncommittedLog(logId);
     }
     
     @Override
     public long getLastCommittedLogId() {
-        return storageRepository.getLastCommittedLogId();
+        return replicatedStateMachine.getLastCommittedLogId();
     }
     
     @Override
     public LogEntry getLogById(long logId) {
-        return storageRepository.getLogById(logId);
+        return replicatedStateMachine.getLogById(logId);
     }
     
     @Override
     public long getLastUncommittedLogId() {
-        return storageRepository.getLastUncommittedLogId();
+        return replicatedStateMachine.getLastUncommittedLogId();
     }
     
     @Override
     public void close() {
-        storageRepository.close();
+        replicatedStateMachine.close();
     }
 }

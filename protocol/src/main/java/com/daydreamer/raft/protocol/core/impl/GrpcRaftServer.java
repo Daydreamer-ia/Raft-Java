@@ -8,7 +8,7 @@ import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.core.AbstractFollowerNotifier;
 import com.daydreamer.raft.protocol.entity.Member;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
-import com.daydreamer.raft.protocol.storage.StorageRepository;
+import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 import com.daydreamer.raft.api.entity.request.VoteCommitRequest;
 import com.daydreamer.raft.api.entity.request.VoteRequest;
 import com.daydreamer.raft.api.entity.response.VoteCommitResponse;
@@ -43,8 +43,8 @@ public class GrpcRaftServer extends AbstractRaftServer {
     private PropertiesReader<RaftConfig> raftPropertiesReader;
     
     public GrpcRaftServer(PropertiesReader<RaftConfig> raftPropertiesReader, RaftMemberManager raftMemberManager,
-            AbstractFollowerNotifier abstractFollowerNotifier, StorageRepository storageRepository) {
-        super(raftPropertiesReader.getProperties(), raftMemberManager, abstractFollowerNotifier, storageRepository);
+            AbstractFollowerNotifier abstractFollowerNotifier, ReplicatedStateMachine replicatedStateMachine) {
+        super(raftPropertiesReader.getProperties(), raftMemberManager, abstractFollowerNotifier, replicatedStateMachine);
         this.raftMemberManager = raftMemberManager;
         this.raftPropertiesReader = raftPropertiesReader;
     }

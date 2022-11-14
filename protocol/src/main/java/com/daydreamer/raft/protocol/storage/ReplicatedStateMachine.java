@@ -9,7 +9,7 @@ import com.daydreamer.raft.transport.connection.Closeable;
  * <p>
  * log storage
  */
-public interface StorageRepository extends Closeable {
+public interface ReplicatedStateMachine extends Closeable {
     
     /**
      * commit

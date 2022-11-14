@@ -5,8 +5,7 @@ import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.entity.Member;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
 import com.daydreamer.raft.protocol.handler.RequestHandlerHolder;
-import com.daydreamer.raft.protocol.storage.StorageRepository;
-import com.daydreamer.raft.transport.connection.Closeable;
+import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 
 import java.util.List;
 import java.util.Random;
@@ -68,7 +67,7 @@ public abstract class AbstractRaftServer {
     /**
      * storage repository
      */
-    private StorageRepository storageRepository;
+    private ReplicatedStateMachine replicatedStateMachine;
     
     /**
      * registry
@@ -90,11 +89,11 @@ public abstract class AbstractRaftServer {
     });
     
     public AbstractRaftServer(RaftConfig raftConfig, RaftMemberManager raftMemberManager,
-            AbstractFollowerNotifier abstractFollowerNotifier, StorageRepository storageRepository) {
+            AbstractFollowerNotifier abstractFollowerNotifier, ReplicatedStateMachine replicatedStateMachine) {
         this.raftConfig = raftConfig;
         this.raftMemberManager = raftMemberManager;
         this.abstractFollowerNotifier = abstractFollowerNotifier;
-        this.storageRepository = storageRepository;
+        this.replicatedStateMachine = replicatedStateMachine;
     }
     
     /**
@@ -103,7 +102,7 @@ public abstract class AbstractRaftServer {
     public void start() {
         try {
             // init request handler
-            requestHandlerHolder = new RequestHandlerHolder(raftMemberManager, this, storageRepository);
+            requestHandlerHolder = new RequestHandlerHolder(raftMemberManager, this, replicatedStateMachine);
             // load entity
             Class.forName(MsgUtils.class.getName());
             // init member manager
@@ -201,7 +200,7 @@ public abstract class AbstractRaftServer {
         Member self = raftMemberManager.getSelf();
         allMember.forEach(member -> {
             member.setTerm(self.getTerm());
-            member.setLogId(storageRepository.getLastUncommittedLogId());
+            member.setLogId(replicatedStateMachine.getLastUncommittedLogId());
         });
     }
     
@@ -277,6 +276,6 @@ public abstract class AbstractRaftServer {
     public void close() {
         raftMemberManager.close();
         abstractFollowerNotifier.close();
-        storageRepository.close();
+        replicatedStateMachine.close();
     }
 }

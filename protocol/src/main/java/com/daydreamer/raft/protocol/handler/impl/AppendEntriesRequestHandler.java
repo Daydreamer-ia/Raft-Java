@@ -8,7 +8,7 @@ import com.daydreamer.raft.api.entity.response.AppendEntriesResponse;
 import com.daydreamer.raft.api.entity.response.ServerErrorResponse;
 import com.daydreamer.raft.protocol.aware.StorageRepositoryAware;
 import com.daydreamer.raft.protocol.handler.RequestHandler;
-import com.daydreamer.raft.protocol.storage.StorageRepository;
+import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 import org.apache.log4j.Logger;
 
 /**
@@ -22,7 +22,7 @@ public class AppendEntriesRequestHandler
     /**
      * log repository
      */
-    private StorageRepository storageRepository;
+    private ReplicatedStateMachine replicatedStateMachine;
     
     @Override
     public synchronized Response handle(AppendEntriesRequest request) {
@@ -32,9 +32,9 @@ public class AppendEntriesRequestHandler
             long leaderLastLogId = request.getLastLogId();
             // if first log
             if (leaderLastLogId == -1) {
-                if (storageRepository.getLastCommittedLogId() == -1) {
+                if (replicatedStateMachine.getLastCommittedLogId() == -1) {
                     for (LogEntry logEntry : request.getLogEntries()) {
-                        storageRepository.append(logEntry);
+                        replicatedStateMachine.append(logEntry);
                     }
                     return new AppendEntriesResponse(true);
                 } else {
@@ -43,12 +43,12 @@ public class AppendEntriesRequestHandler
                 }
             }
             // try to find
-            LogEntry lastLog = storageRepository.getLogById(leaderLastLogId);
+            LogEntry lastLog = replicatedStateMachine.getLogById(leaderLastLogId);
             // if found, then append
             if (lastLog != null && lastLog.getTerm() == leaderLastLogTerm) {
                 // append all
                 for (LogEntry logEntry : request.getLogEntries()) {
-                    storageRepository.append(logEntry);
+                    replicatedStateMachine.append(logEntry);
                 }
                 return new AppendEntriesResponse(true);
             }
@@ -59,7 +59,7 @@ public class AppendEntriesRequestHandler
         } catch (Exception e) {
             // nothing to do
             e.printStackTrace();
-            LogEntry lastCommittedLog = storageRepository.getCommittedLog(storageRepository.getLastCommittedLogId());
+            LogEntry lastCommittedLog = replicatedStateMachine.getCommittedLog(replicatedStateMachine.getLastCommittedLogId());
             LOGGER.error(
                     "Fail to append log, leader last term: " + request.getLastTerm()
                             + ", leader last log id: " + request.getLastLogId() + ", current node committed log term: "
@@ -75,7 +75,7 @@ public class AppendEntriesRequestHandler
     }
     
     @Override
-    public void setStorageRepository(StorageRepository storageRepository) {
-        this.storageRepository = storageRepository;
+    public void setReplicatedStateMachine(ReplicatedStateMachine replicatedStateMachine) {
+        this.replicatedStateMachine = replicatedStateMachine;
     }
 }
