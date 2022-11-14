@@ -164,6 +164,7 @@ public abstract class AbstractRaftServer {
                         // prevote, try to increase term of current node
                         if (prevote()) {
                             raftMemberManager.getSelf().increaseTerm();
+                            LOGGER.info("Server member increase its term, member: " + raftMemberManager.getSelf().getAddress() + ", term: " + raftMemberManager.getSelf().getTerm());
                         } else {
                             continue;
                         }
@@ -257,6 +258,7 @@ public abstract class AbstractRaftServer {
      */
     public synchronized void refreshLastVotedTerm(int term) {
         lastTermCurrentNodeHasVoted = term;
+        leaderLastActiveTime = System.currentTimeMillis();
         normalCluster.compareAndSet(false, true);
     }
     
