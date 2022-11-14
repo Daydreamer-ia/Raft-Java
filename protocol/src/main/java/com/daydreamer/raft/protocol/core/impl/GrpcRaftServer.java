@@ -1,5 +1,7 @@
 package com.daydreamer.raft.protocol.core.impl;
 
+import com.daydreamer.raft.api.entity.request.PrevoteRequest;
+import com.daydreamer.raft.api.entity.response.PrevoteResponse;
 import com.daydreamer.raft.common.service.PropertiesReader;
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
@@ -15,6 +17,7 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
 import java.util.concurrent.TimeUnit;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -68,7 +71,6 @@ public class GrpcRaftServer extends AbstractRaftServer {
     public boolean requestVote() throws Exception {
         // request vote
         Member self = raftMemberManager.getSelf();
-        self.increaseTerm();
         // refresh candidate
         refreshCandidateActive();
         // if success half of all
@@ -84,6 +86,20 @@ public class GrpcRaftServer extends AbstractRaftServer {
                     // nothing to do
                     return ((VoteCommitResponse) response).isAccepted();
                 });
+    }
+    
+    @Override
+    protected boolean prevote() throws Exception {
+        // refresh candidate
+        refreshCandidateActive();
+        Member self = raftMemberManager.getSelf();
+        PrevoteRequest prevoteRequest = new PrevoteRequest(self.getTerm(), self.getLogId());
+        return raftMemberManager.batchRequestMembers(prevoteRequest, (response) -> {
+            if (response instanceof PrevoteResponse) {
+                return ((PrevoteResponse) response).isAgree();
+            }
+            return false;
+        });
     }
     
     @Override

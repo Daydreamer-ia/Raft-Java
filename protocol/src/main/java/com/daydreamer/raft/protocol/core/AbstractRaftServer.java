@@ -16,6 +16,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -32,14 +33,14 @@ public abstract class AbstractRaftServer {
     
     /**
      * last time when leader active
-     *
+     * <p>
      * update if current node is follower and receive leader heartbeat
      */
     protected volatile long leaderLastActiveTime;
     
     /**
      * to be candidate start time
-     *
+     * <p>
      * update if current node is follower and receive other node vote request
      */
     protected volatile long beCandidateStartTime;
@@ -77,7 +78,8 @@ public abstract class AbstractRaftServer {
     /**
      * vote executor
      */
-    private ExecutorService executorService = new ThreadPoolExecutor(1, 1, 1000, TimeUnit.MICROSECONDS, new LinkedBlockingQueue<>(), new ThreadFactory() {
+    private ExecutorService executorService = new ThreadPoolExecutor(1, 1, 1000, TimeUnit.MICROSECONDS,
+            new LinkedBlockingQueue<>(), new ThreadFactory() {
         @Override
         public Thread newThread(Runnable runnable) {
             Thread thread = new Thread(runnable);
@@ -138,7 +140,8 @@ public abstract class AbstractRaftServer {
             try {
                 while (true) {
                     // wait a random time
-                    int waitTime = raftConfig.getVoteBaseTime() + new Random().nextInt(raftConfig.getVoteBaseTime() / 2);
+                    int waitTime =
+                            raftConfig.getVoteBaseTime() + new Random().nextInt(raftConfig.getVoteBaseTime() / 2);
                     Thread.sleep(waitTime);
                     // No election will be held if the following conditions are met:
                     //   if current node is leader
@@ -148,12 +151,23 @@ public abstract class AbstractRaftServer {
                         continue;
                     }
                     // if follower and timeout
-                    boolean leaderHeartbeatTimeout = NodeRole.FOLLOWER.equals(getSelf().getRole()) && System.currentTimeMillis() - leaderLastActiveTime > raftConfig.getAbnormalActiveInterval();
+                    boolean leaderHeartbeatTimeout = NodeRole.FOLLOWER.equals(getSelf().getRole())
+                            && System.currentTimeMillis() - leaderLastActiveTime > raftConfig
+                            .getAbnormalActiveInterval();
                     // if candidate and timeout
-                    boolean candidateWaitTimeout = NodeRole.CANDIDATE.equals(getSelf().getRole()) && System.currentTimeMillis() - beCandidateStartTime > raftConfig.getCandidateStatusTimeout();
+                    boolean candidateWaitTimeout = NodeRole.CANDIDATE.equals(getSelf().getRole())
+                            && System.currentTimeMillis() - beCandidateStartTime > raftConfig
+                            .getCandidateStatusTimeout();
                     if (leaderHeartbeatTimeout || candidateWaitTimeout) {
                         // timeout if cluster invalid
                         normalCluster.set(false);
+                        // prevote, try to increase term of current node
+                        if (prevote()) {
+                            raftMemberManager.getSelf().increaseTerm();
+                            LOGGER.info("Server member increase its term, member: " + raftMemberManager.getSelf().getAddress() + ", term: " + raftMemberManager.getSelf().getTerm());
+                        } else {
+                            continue;
+                        }
                         // return the val whether don't need to allow to vote again
                         // current may be leader
                         if (requestVote()) {
@@ -161,7 +175,8 @@ public abstract class AbstractRaftServer {
                             // syn log id
                             synAllMember();
                             normalCluster.compareAndSet(false, true);
-                            LOGGER.info("Server node has been leader, member: " + raftMemberManager.getSelf().getAddress());
+                            LOGGER.info(
+                                    "Server node has been leader, member: " + raftMemberManager.getSelf().getAddress());
                         }
                     }
                 }
@@ -199,9 +214,17 @@ public abstract class AbstractRaftServer {
      * request for leader
      *
      * @return whether current node being leader
-     * @throws Exception
+     * @throws Exception exception
      */
     protected abstract boolean requestVote() throws Exception;
+    
+    /**
+     * prevote to increase term of current node
+     *
+     * @return whether success
+     * @throws Exception exception
+     */
+    protected abstract boolean prevote() throws Exception;
     
     /**
      * whether current node is leader
@@ -235,6 +258,7 @@ public abstract class AbstractRaftServer {
      */
     public synchronized void refreshLastVotedTerm(int term) {
         lastTermCurrentNodeHasVoted = term;
+        leaderLastActiveTime = System.currentTimeMillis();
         normalCluster.compareAndSet(false, true);
     }
     
