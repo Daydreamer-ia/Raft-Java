@@ -240,8 +240,9 @@ Here are my notes in Chinese:
 > 一阶段
 
 - 客户端将 `C-new` 发送给 `leader`，`leader` 将 `C-old` 与 `C-new` 取**并集**，我们表示为 **`C-old,new`**；
-- `Leader` 将 `C-old,new` 包装为日志同步给其它节点；
+- `Leader` 将 `C-old,new` 包装为日志同步给其它节点，要求在新旧配置中的集群节点都达到大多数才可以提交；
 - `Follower` 收到 `C-old,new` ，当 **`C-old,new` 的大多数节点（即 `C-old` 的大多数节点和 `C-new` 的大多数节点）**都切换后，`leader` 将尝试该日志 `commit`；
+- - 此时集群就进入到联合一致的状态
 - `Leader` 发送提交请求给 `Follower`，正常响应后就应用
 
 > 二阶段
