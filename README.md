@@ -239,17 +239,17 @@ Here are my notes in Chinese:
 
 > 一阶段
 
-- 客户端将 `C-new` 发送给 `leader`，`leader` 将 `C-old` 与 `C-new` 取**并集**，我们表示为 **`C-old,new`**；
-- `Leader` 将 `C-old,new` 包装为日志同步给其它节点，要求在新旧配置中的集群节点都达到大多数才可以提交；
-- `Follower` 收到 `C-old,new` ，当 **`C-old,new` 的大多数节点（即 `C-old` 的大多数节点和 `C-new` 的大多数节点）**都切换后，`leader` 将尝试该日志 `commit`；
-- - 此时集群就进入到联合一致的状态
-- `Leader` 发送提交请求给 `Follower`，正常响应后就应用
+- 客户端将 `C-new` 发送给 `leader`，`leader` 将 `C-old` 与 `C-new` 取**并集**，我们表示为 **`C-old,new`**，并立即应用配置到 `Leader` 配置中；
+- `Leader` 将 `C-old,new` 包装为日志同步给其它节点；
+- `Follower` 收到 `C-old,new` 后，立刻应用到 `Follower` 的集群成员中
+- - 此时集群就进入到联合一致的状态，**任何读写操作(包括选举)都需要经过新节点集群和旧节点集群的一半以上**，才算成功
+- 当 **`C-old,new` 的大多数节点（即 `C-old` 的大多数节点和 `C-new` 的大多数节点）**都切换后，`leader` 将尝试该日志 `commit`
 
 > 二阶段
 
-- `Leader` 接着将 `C-new` 包装为日志同步给其它节点；
-- `Follower` 收到`C-new` 后立即应用，如果此时发现自己不在 `C-new` 列表，则主动退出集群；
-- `Leader` 确认 **`C-new` 的大多数节点**都切换成功后，给客户端发送执行成功的响应；
+- `Leader` 接着将 `C-new` 包装为日志同步给其它节点
+- `Follower` 收到`C-new` 后立即应用，如果此时发现自己不在 `C-new` 列表，则主动退出集群
+- `Leader` 确认 **`C-new` 的大多数节点**都切换成功后，给客户端发送执行成功的响应
 
 ## 日志压缩
 
