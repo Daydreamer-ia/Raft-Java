@@ -137,7 +137,7 @@ public abstract class AbstractRaftServer {
     private void initAskVoteLeaderJob() {
         executorService.execute(() -> {
             try {
-                while (true) {
+                while (!executorService.isShutdown()) {
                     // wait a random time
                     int waitTime =
                             raftConfig.getVoteBaseTime() + new Random().nextInt(raftConfig.getVoteBaseTime() / 2);

@@ -74,6 +74,8 @@ public class RaftProtocol implements Protocol {
         Member self = raftMemberManager.getSelf();
         LogEntry logEntry = new LogEntry(self.getTerm(), self.getLogId() + 1, payload);
         replicatedStateMachine.append(logEntry);
+        // increase log id
+        self.increaseLogId();
         // try to append one
         int successCount = 0;
         List<Member> finish = new ArrayList<>();

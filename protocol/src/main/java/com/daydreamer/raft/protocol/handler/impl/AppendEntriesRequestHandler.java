@@ -6,16 +6,20 @@ import com.daydreamer.raft.api.entity.constant.ResponseCode;
 import com.daydreamer.raft.api.entity.request.AppendEntriesRequest;
 import com.daydreamer.raft.api.entity.response.AppendEntriesResponse;
 import com.daydreamer.raft.api.entity.response.ServerErrorResponse;
+import com.daydreamer.raft.protocol.aware.RaftMemberManagerAware;
 import com.daydreamer.raft.protocol.aware.StorageRepositoryAware;
+import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.handler.RequestHandler;
 import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 import org.apache.log4j.Logger;
+
+import java.util.List;
 
 /**
  * @author Daydreamer
  */
 public class AppendEntriesRequestHandler
-        implements RequestHandler<AppendEntriesRequest, Response>, StorageRepositoryAware {
+        implements RequestHandler<AppendEntriesRequest, Response>, StorageRepositoryAware, RaftMemberManagerAware {
     
     private static final Logger LOGGER = Logger.getLogger(AppendEntriesRequestHandler.class);
     
@@ -24,6 +28,11 @@ public class AppendEntriesRequestHandler
      */
     private ReplicatedStateMachine replicatedStateMachine;
     
+    /**
+     * raft member manager
+     */
+    private RaftMemberManager raftMemberManager;
+    
     @Override
     public synchronized Response handle(AppendEntriesRequest request) {
         try {
@@ -31,11 +40,14 @@ public class AppendEntriesRequestHandler
             int leaderLastLogTerm = request.getLastTerm();
             long leaderLastLogId = request.getLastLogId();
             // if first log
+            List<LogEntry> logEntries = request.getLogEntries();
             if (leaderLastLogId == -1) {
                 if (replicatedStateMachine.getLastCommittedLogId() == -1) {
-                    for (LogEntry logEntry : request.getLogEntries()) {
+                    for (LogEntry logEntry : logEntries) {
                         replicatedStateMachine.append(logEntry);
                     }
+                    // update log index
+                    raftMemberManager.getSelf().setLogId(logEntries.get(logEntries.size() - 1).getLogId());
                     return new AppendEntriesResponse(true);
                 } else {
                     LOGGER.error("First log has committed, cannot cover!");
@@ -47,9 +59,11 @@ public class AppendEntriesRequestHandler
             // if found, then append
             if (lastLog != null && lastLog.getTerm() == leaderLastLogTerm) {
                 // append all
-                for (LogEntry logEntry : request.getLogEntries()) {
+                for (LogEntry logEntry : logEntries) {
                     replicatedStateMachine.append(logEntry);
                 }
+                // update log index
+                raftMemberManager.getSelf().setLogId(logEntries.get(logEntries.size() - 1).getLogId());
                 return new AppendEntriesResponse(true);
             }
             // cannot found, then ask leader to syn ahead
@@ -77,5 +91,10 @@ public class AppendEntriesRequestHandler
     @Override
     public void setReplicatedStateMachine(ReplicatedStateMachine replicatedStateMachine) {
         this.replicatedStateMachine = replicatedStateMachine;
+    }
+    
+    @Override
+    public void setRaftMemberManager(RaftMemberManager raftMemberManager) {
+        this.raftMemberManager = raftMemberManager;
     }
 }
