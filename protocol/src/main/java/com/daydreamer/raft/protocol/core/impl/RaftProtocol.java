@@ -59,7 +59,7 @@ public class RaftProtocol implements Protocol {
     }
     
     @Override
-    public boolean write(Payload payload) throws Exception {
+    public synchronized boolean write(Payload payload) throws Exception {
         // if abnormal
         if (!raftServer.normalCluster()) {
             throw new IllegalStateException(

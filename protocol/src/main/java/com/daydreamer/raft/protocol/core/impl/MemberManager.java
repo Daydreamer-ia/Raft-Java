@@ -2,6 +2,7 @@ package com.daydreamer.raft.protocol.core.impl;
 
 import com.daydreamer.raft.api.entity.Request;
 import com.daydreamer.raft.api.entity.Response;
+import com.daydreamer.raft.api.entity.request.MemberChangeRequest;
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.constant.NodeStatus;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
@@ -20,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -38,6 +40,11 @@ public class MemberManager implements RaftMemberManager {
     private Member self;
     
     private List<Member> members = new ArrayList<>();
+    
+    /**
+     * whether changing members
+     */
+    private AtomicBoolean isChangingMember = new AtomicBoolean(false);
     
     public MemberManager(RaftConfig raftConfig) {
         this.raftConfig = raftConfig;
@@ -116,8 +123,30 @@ public class MemberManager implements RaftMemberManager {
     }
     
     @Override
-    public boolean addNewMember(Member member) {
+    public boolean addNewMember(String addr) {
+        if (isMemberChanging()) {
+            throw new IllegalStateException("Current cluster has not completed the last member change");
+        }
+//        isChangingMember.set(true);
+//        // new request
+//        List<String> newMembers = members.stream().map(Member::getAddress).collect(Collectors.toList());
+//        newMembers.add(addr);
+//        // try to request
+//        MemberChangeRequest request = new MemberChangeRequest(newMembers);
         throw new UnsupportedOperationException("Current version don't support member change!");
+    }
+    
+    @Override
+    public boolean removeMember(String id) {
+        if (isMemberChanging()) {
+            throw new IllegalStateException("Current cluster has not completed the last member change");
+        }
+        throw new UnsupportedOperationException("Current version don't support member change!");
+    }
+    
+    @Override
+    public boolean isMemberChanging() {
+        return isChangingMember.get();
     }
     
     @Override

@@ -37,10 +37,25 @@ public interface RaftMemberManager extends Closeable {
     /**
      * add a new member may success if current node is leader, fail if follower
      *
-     * @param member new member
+     * @param addr new member
      * @return whether add successfully
      */
-    boolean addNewMember(Member member);
+    boolean addNewMember(String addr);
+    
+    /**
+     * remove a existed member
+     *
+     * @param id member addr
+     * @return whether remove successfully
+     */
+    boolean removeMember(String id);
+    
+    /**
+     * whether changing member
+     *
+     * @return whether changing member
+     */
+    boolean isMemberChanging();
     
     /**
      * get self as member
