@@ -45,7 +45,7 @@ public class LogAppendExample {
             for (Protocol protocol : protocols) {
                 // find leader
                 try {
-                    boolean write = protocol.write(new Payload("Hello, raft", LogType.WRITE));
+                    boolean write = protocol.write(new Payload<>("Hello, raft", LogType.WRITE));
                     System.out.println("write result:" + write);
                 } catch (IllegalStateException e) {
                     // it not leader

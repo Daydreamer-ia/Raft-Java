@@ -2,7 +2,9 @@ package com.daydreamer.raft.protocol.core.impl;
 
 import com.daydreamer.raft.api.entity.Response;
 import com.daydreamer.raft.api.entity.base.LogEntry;
+import com.daydreamer.raft.api.entity.base.MemberChangeEntry;
 import com.daydreamer.raft.api.entity.base.Payload;
+import com.daydreamer.raft.api.entity.constant.LogType;
 import com.daydreamer.raft.api.entity.request.AppendEntriesRequest;
 import com.daydreamer.raft.api.entity.request.EntryCommittedRequest;
 import com.daydreamer.raft.api.entity.response.AppendEntriesResponse;
@@ -23,6 +25,7 @@ import com.daydreamer.raft.transport.connection.ResponseCallBack;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -59,7 +62,7 @@ public class RaftProtocol implements Protocol {
     }
     
     @Override
-    public synchronized boolean write(Payload payload) throws Exception {
+    public synchronized boolean write(Payload<?> payload) throws Exception {
         // if abnormal
         if (!raftServer.normalCluster()) {
             throw new IllegalStateException(
@@ -101,6 +104,9 @@ public class RaftProtocol implements Protocol {
         }
         // success
         if (successCount + 1 > (allMember.size() + 1) / 2) {
+            // remark send log
+            raftServer.sendLog();
+            // reset log index
             finish.forEach(member -> {
                 member.setLogId(logEntry.getLogId());
                 member.setTerm(logEntry.getTerm());
@@ -240,6 +246,26 @@ public class RaftProtocol implements Protocol {
     @Override
     public void read() {
         throw new UnsupportedOperationException("Current version don't support this action.");
+    }
+    
+    @Override
+    public void memberChange(Payload<MemberChangeEntry> payload) throws Exception {
+        if (payload == null || payload.getObject() == null) {
+            throw new IllegalArgumentException("payload is null!");
+        }
+        if (!LogType.MEMBER_CHANGE.equals(payload.getLogType())) {
+            throw new IllegalArgumentException("Illegal request for member changing!");
+        }
+        if (payload.getObject().getMemberChange() == null) {
+            throw new IllegalArgumentException("Illegal request for member changing!");
+        }
+        // check no op
+        if (!raftServer.hasSendLogInCurrentTerm()) {
+            // send no op log to asyn log
+            write(new Payload<>("", LogType.WRITE));
+        }
+        // if has send
+        // TODO finish member change follow
     }
     
     @Override
