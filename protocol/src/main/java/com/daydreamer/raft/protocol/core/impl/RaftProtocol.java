@@ -6,11 +6,7 @@ import com.daydreamer.raft.api.entity.base.LogEntry;
 import com.daydreamer.raft.api.entity.base.MemberChangeEntry;
 import com.daydreamer.raft.api.entity.base.Payload;
 import com.daydreamer.raft.api.entity.constant.LogType;
-import com.daydreamer.raft.api.entity.request.AppendEntriesRequest;
 import com.daydreamer.raft.api.entity.request.EntryCommittedRequest;
-import com.daydreamer.raft.api.entity.response.AppendEntriesResponse;
-import com.daydreamer.raft.api.entity.response.EntryCommittedResponse;
-import com.daydreamer.raft.api.entity.response.ServerErrorResponse;
 import com.daydreamer.raft.common.service.PropertiesReader;
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
 import com.daydreamer.raft.protocol.core.LogSender;
@@ -103,8 +99,6 @@ public class RaftProtocol implements Protocol {
         }
         // success
         if (successCount + 1 > (allMember.size() + 1) / 2) {
-            // remark send log
-            raftServer.sendLog();
             // reset log index
             finish.forEach(member -> {
                 member.setLogId(logEntry.getLogId());
@@ -140,11 +134,6 @@ public class RaftProtocol implements Protocol {
         }
         if (payload.getObject().getMemberChange() == null) {
             throw new IllegalArgumentException("Illegal request for member changing!");
-        }
-        // check no op
-        if (!raftServer.hasSendLogInCurrentTerm()) {
-            // send no op log to asyn log
-            write(new Payload<>("", LogType.WRITE));
         }
         // if has send
         // TODO finish member change follow

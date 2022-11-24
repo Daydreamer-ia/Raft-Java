@@ -43,18 +43,13 @@ public class GrpcRaftServer extends AbstractRaftServer {
      */
     private PropertiesReader<RaftConfig> raftPropertiesReader;
     
-    /**
-     * log sender
-     */
-    private LogSender logSender;
-    
     public GrpcRaftServer(PropertiesReader<RaftConfig> raftPropertiesReader, RaftMemberManager raftMemberManager,
             AbstractFollowerNotifier abstractFollowerNotifier, ReplicatedStateMachine replicatedStateMachine,
             LogSender logSender) {
-        super(raftPropertiesReader.getProperties(), raftMemberManager, abstractFollowerNotifier, replicatedStateMachine);
+        super(raftPropertiesReader.getProperties(), raftMemberManager,
+                abstractFollowerNotifier, replicatedStateMachine, logSender);
         this.raftMemberManager = raftMemberManager;
         this.raftPropertiesReader = raftPropertiesReader;
-        this.logSender = logSender;
     }
     
     @Override

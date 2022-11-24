@@ -33,8 +33,7 @@ public class DelegateReplicatedStateMachine implements ReplicatedStateMachine {
     public boolean commit(int term, long logId) throws LogException {
         boolean commit = replicatedStateMachine.commit(term, logId);
         if (commit) {
-            raftMemberManager.getSelf().setLogId(logId);
-            LOGGER.info("Member: "+ raftMemberManager.getSelf().getAddress() + ", term: " + term + ", log index: " + logId+ " has committed!");
+            LOGGER.info("Member: "+ raftMemberManager.getSelf().getAddress() + ", "+ replicatedStateMachine.getLogById(logId)  +  " commit finish!");
         }
         return commit;
     }
@@ -43,8 +42,7 @@ public class DelegateReplicatedStateMachine implements ReplicatedStateMachine {
     public boolean append(LogEntry logEntry) throws LogException {
         boolean append = replicatedStateMachine.append(logEntry);
         if (append) {
-            LOGGER.info("Member: "+ raftMemberManager.getSelf().getAddress() + ", term: " + logEntry.getTerm() + ", log index: " + logEntry.getLogId()
-                    + " append finish!");
+            LOGGER.info("Member: "+ raftMemberManager.getSelf().getAddress() + ", "+ logEntry  +  " append finish!");
         }
         return append;
     }

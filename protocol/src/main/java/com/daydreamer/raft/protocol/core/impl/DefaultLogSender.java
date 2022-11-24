@@ -16,6 +16,7 @@ import com.daydreamer.raft.transport.connection.ResponseCallBack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -41,9 +42,11 @@ public class DefaultLogSender implements LogSender {
     }
     
     @Override
-    public boolean appendLog(Member member, LogEntry logEntry) throws Exception {
+    public synchronized boolean appendLog(Member member, LogEntry logEntry) throws Exception {
         // append log request
-        AppendEntriesRequest originRequest = buildAppendLogRequest(Collections.singletonList(logEntry));
+        ArrayList<LogEntry> logEntries = new ArrayList<LogEntry>();
+        logEntries.add(logEntry);
+        AppendEntriesRequest originRequest = buildAppendLogRequest(logEntries);
         Connection connection = member.getConnection();
         if (connection != null) {
             AppendEntriesResponse response = new AppendEntriesResponse(false);
@@ -112,7 +115,7 @@ public class DefaultLogSender implements LogSender {
     }
     
     @Override
-    public boolean commit(Member member, Request request) throws Exception {
+    public synchronized boolean commit(Member member, Request request) throws Exception {
         Connection connection = member.getConnection();
         if (connection != null) {
             Response response = connection.request(request, 2500);
