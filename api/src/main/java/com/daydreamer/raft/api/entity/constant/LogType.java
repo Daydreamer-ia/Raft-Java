@@ -18,6 +18,11 @@ public enum LogType {
     WRITE,
     
     /**
+     * no-op
+     */
+    NO_OP,
+    
+    /**
      * member change
      */
     MEMBER_CHANGE

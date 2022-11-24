@@ -1,11 +1,16 @@
 package com.daydreamer.raft.protocol.core;
 
+import com.daydreamer.raft.api.entity.base.LogEntry;
+import com.daydreamer.raft.api.entity.base.Payload;
+import com.daydreamer.raft.api.entity.constant.LogType;
 import com.daydreamer.raft.common.utils.MsgUtils;
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.entity.Member;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
 import com.daydreamer.raft.protocol.handler.RequestHandlerHolder;
 import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Random;
@@ -16,14 +21,13 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.log4j.Logger;
 
 /**
  * @author Daydreamer
  */
 public abstract class AbstractRaftServer {
     
-    private static final Logger LOGGER = Logger.getLogger(AbstractRaftServer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRaftServer.class.getSimpleName());
     
     /**
      * if there is a leader in cluster
@@ -75,9 +79,9 @@ public abstract class AbstractRaftServer {
     protected RequestHandlerHolder requestHandlerHolder;
     
     /**
-     * append log
+     * log sender
      */
-    private AtomicBoolean sendLogBeforeMemberChange = new AtomicBoolean(false);
+    protected LogSender logSender;
     
     /**
      * vote executor
@@ -94,11 +98,13 @@ public abstract class AbstractRaftServer {
     });
     
     public AbstractRaftServer(RaftConfig raftConfig, RaftMemberManager raftMemberManager,
-            AbstractFollowerNotifier abstractFollowerNotifier, ReplicatedStateMachine replicatedStateMachine) {
+            AbstractFollowerNotifier abstractFollowerNotifier, ReplicatedStateMachine replicatedStateMachine,
+            LogSender logSender) {
         this.raftConfig = raftConfig;
         this.raftMemberManager = raftMemberManager;
         this.abstractFollowerNotifier = abstractFollowerNotifier;
         this.replicatedStateMachine = replicatedStateMachine;
+        this.logSender = logSender;
     }
     
     /**
@@ -177,13 +183,24 @@ public abstract class AbstractRaftServer {
                         // current may be leader
                         if (requestVote()) {
                             getSelf().setRole(NodeRole.LEADER);
-                            // ask to send no-op log before member change
-                            sendLogBeforeMemberChange.set(false);
                             // syn log id
                             synAllMember();
                             normalCluster.compareAndSet(false, true);
                             LOGGER.info(
                                     "Server node has been leader, member: " + raftMemberManager.getSelf().getAddress());
+                            // send no-op
+                            Member self = raftMemberManager.getSelf();
+                            LogEntry noOp = new LogEntry(self.getTerm(), self.getLogId() + 1,
+                                    new Payload<>("", LogType.NO_OP));
+                            for (Member member : raftMemberManager.getAllMember()) {
+                                try {
+                                    logSender.appendLog(member, noOp);
+                                } catch (Exception e) {
+                                    LOGGER.error("Fail to append no-op log, member: {}, because {}", member.getAddress(), e.getMessage());
+                                }
+                            }
+                            replicatedStateMachine.append(noOp);
+                            self.increaseLogId();
                         }
                     }
                 }
@@ -278,21 +295,6 @@ public abstract class AbstractRaftServer {
         return lastTermCurrentNodeHasVoted;
     }
     
-    /**
-     * remark send log, it should be invoke after send log success
-     */
-    public void sendLog() {
-        sendLogBeforeMemberChange.compareAndSet(false, true);
-    }
-    
-    /**
-     * whether has send log in current term
-     *
-     * @return whether has send log in current term
-     */
-    public boolean hasSendLogInCurrentTerm() {
-        return sendLogBeforeMemberChange.get();
-    }
     
     /**
      * close

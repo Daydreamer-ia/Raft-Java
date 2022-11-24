@@ -5,9 +5,9 @@ import com.daydreamer.raft.api.entity.base.CommittedResponse;
 /**
  * @author Daydreamer
  */
-public class EntryCommittedResponse extends CommittedResponse {
+public class MemberChangeCommitRequest extends CommittedResponse {
     
-    public EntryCommittedResponse(boolean accepted) {
+    public MemberChangeCommitRequest(boolean accepted) {
         super(accepted);
     }
 }

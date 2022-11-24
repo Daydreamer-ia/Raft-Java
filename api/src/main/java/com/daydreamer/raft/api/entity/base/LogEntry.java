@@ -77,6 +77,6 @@ public class LogEntry implements Serializable {
     
     @Override
     public String toString() {
-        return "LogEntry{" + "term=" + term + ", logId=" + logId + ", payload=" + payload + '}';
+        return "LogEntry{" + "term=" + term + ", logId=" + logId + ", log type=" + payload.getLogType() + '}';
     }
 }

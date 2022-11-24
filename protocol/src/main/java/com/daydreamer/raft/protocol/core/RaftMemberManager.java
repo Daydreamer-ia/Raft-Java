@@ -1,12 +1,10 @@
 package com.daydreamer.raft.protocol.core;
 
-import com.daydreamer.raft.api.entity.Request;
-import com.daydreamer.raft.api.entity.Response;
 import com.daydreamer.raft.protocol.entity.Member;
+import com.daydreamer.raft.protocol.exception.LogException;
 import com.daydreamer.raft.transport.connection.Closeable;
 
 import java.util.List;
-import java.util.function.Predicate;
 
 /**
  * @author Daydreamer
@@ -39,8 +37,9 @@ public interface RaftMemberManager extends Closeable {
      *
      * @param addr new member
      * @return whether add successfully
+     * @throws LogException log exception
      */
-    boolean addNewMember(String addr);
+    boolean addNewMember(String addr) throws LogException;
     
     /**
      * remove a existed member
@@ -78,14 +77,4 @@ public interface RaftMemberManager extends Closeable {
      * @return whether current node is leader
      */
     boolean isLeader();
-    
-    /**
-     * send request to all members
-     *
-     * @param request request
-     * @param predicate condition success
-     * @return whether success half of all
-     * @throws Exception exception
-     */
-    boolean batchRequestMembers(Request request, Predicate<Response> predicate) throws Exception;
 }
