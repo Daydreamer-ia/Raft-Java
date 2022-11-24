@@ -4,6 +4,7 @@ import com.daydreamer.raft.api.entity.request.PrevoteRequest;
 import com.daydreamer.raft.api.entity.response.PrevoteResponse;
 import com.daydreamer.raft.common.service.PropertiesReader;
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
+import com.daydreamer.raft.protocol.core.LogSender;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.core.AbstractFollowerNotifier;
 import com.daydreamer.raft.protocol.entity.Member;
@@ -42,11 +43,18 @@ public class GrpcRaftServer extends AbstractRaftServer {
      */
     private PropertiesReader<RaftConfig> raftPropertiesReader;
     
+    /**
+     * log sender
+     */
+    private LogSender logSender;
+    
     public GrpcRaftServer(PropertiesReader<RaftConfig> raftPropertiesReader, RaftMemberManager raftMemberManager,
-            AbstractFollowerNotifier abstractFollowerNotifier, ReplicatedStateMachine replicatedStateMachine) {
+            AbstractFollowerNotifier abstractFollowerNotifier, ReplicatedStateMachine replicatedStateMachine,
+            LogSender logSender) {
         super(raftPropertiesReader.getProperties(), raftMemberManager, abstractFollowerNotifier, replicatedStateMachine);
         this.raftMemberManager = raftMemberManager;
         this.raftPropertiesReader = raftPropertiesReader;
+        this.logSender = logSender;
     }
     
     @Override
@@ -75,14 +83,14 @@ public class GrpcRaftServer extends AbstractRaftServer {
         refreshCandidateActive();
         // if success half of all
         // then commit
-        if (!raftMemberManager.batchRequestMembers(new VoteRequest(self.getTerm(), self.getLogId()), response -> {
+        if (!logSender.batchRequestMembers(new VoteRequest(self.getTerm(), self.getLogId()), raftMemberManager.getAllMember(),response -> {
             // nothing to do
             return ((VoteResponse) response).isVoted();
         })) {
             return false;
         }
-        return raftMemberManager
-                .batchRequestMembers(new VoteCommitRequest(self.getTerm(), self.getLogId()), response -> {
+        return logSender
+                .batchRequestMembers(new VoteCommitRequest(self.getTerm(), self.getLogId()), raftMemberManager.getAllMember(), response -> {
                     // nothing to do
                     return ((VoteCommitResponse) response).isAccepted();
                 });
@@ -94,7 +102,7 @@ public class GrpcRaftServer extends AbstractRaftServer {
         refreshCandidateActive();
         Member self = raftMemberManager.getSelf();
         PrevoteRequest prevoteRequest = new PrevoteRequest(self.getTerm(), self.getLogId());
-        return raftMemberManager.batchRequestMembers(prevoteRequest, (response) -> {
+        return logSender.batchRequestMembers(prevoteRequest, raftMemberManager.getAllMember(), (response) -> {
             if (response instanceof PrevoteResponse) {
                 return ((PrevoteResponse) response).isAgree();
             }

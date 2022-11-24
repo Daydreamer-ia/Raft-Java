@@ -1,25 +1,24 @@
 package com.daydreamer.raft.api.entity.request;
 
 import com.daydreamer.raft.api.entity.Request;
-
-import java.util.List;
+import com.daydreamer.raft.api.entity.base.MemberChangeEntry;
 
 /**
  * @author Daydreamer
  */
 public class MemberChangeRequest extends Request {
     
-    private List<String> newMembers;
+    private MemberChangeEntry memberChangeEntry;
     
-    public MemberChangeRequest(List<String> newMembers) {
-        this.newMembers = newMembers;
+    public MemberChangeRequest(MemberChangeEntry memberChangeEntry) {
+        this.memberChangeEntry = memberChangeEntry;
     }
     
-    public List<String> getNewMembers() {
-        return newMembers;
+    public MemberChangeEntry getMemberChangeEntry() {
+        return memberChangeEntry;
     }
     
-    public void setNewMembers(List<String> newMembers) {
-        this.newMembers = newMembers;
+    public void setMemberChangeEntry(MemberChangeEntry memberChangeEntry) {
+        this.memberChangeEntry = memberChangeEntry;
     }
 }

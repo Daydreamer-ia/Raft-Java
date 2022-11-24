@@ -2,28 +2,35 @@ package com.daydreamer.raft.protocol.core.impl;
 
 import com.daydreamer.raft.api.entity.Request;
 import com.daydreamer.raft.api.entity.Response;
+import com.daydreamer.raft.api.entity.base.LogEntry;
+import com.daydreamer.raft.api.entity.base.MemberChangeEntry;
+import com.daydreamer.raft.api.entity.base.Payload;
+import com.daydreamer.raft.api.entity.constant.LogType;
+import com.daydreamer.raft.api.entity.constant.MemberChange;
 import com.daydreamer.raft.api.entity.request.MemberChangeRequest;
+import com.daydreamer.raft.api.entity.response.MemberChangeCommitRequest;
+import com.daydreamer.raft.common.service.PropertiesReader;
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.constant.NodeStatus;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
 import com.daydreamer.raft.protocol.entity.Member;
+import com.daydreamer.raft.protocol.exception.LogException;
+import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 import com.daydreamer.raft.transport.connection.Connection;
 import com.daydreamer.raft.transport.connection.ResponseCallBack;
 import com.daydreamer.raft.transport.connection.impl.grpc.GrpcConnection;
 import com.daydreamer.raft.api.grpc.RequesterGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -33,7 +40,11 @@ import java.util.stream.Collectors;
  */
 public class MemberManager implements RaftMemberManager {
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(MemberManager.class.getSimpleName());
+    
     private static final String IP_PORT_ADDR_FORMAT = "((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})(\\.((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})){3}:[0-9]{2,5}";
+    
+    private PropertiesReader<RaftConfig> propertiesReader;
     
     private RaftConfig raftConfig;
     
@@ -46,8 +57,9 @@ public class MemberManager implements RaftMemberManager {
      */
     private AtomicBoolean isChangingMember = new AtomicBoolean(false);
     
-    public MemberManager(RaftConfig raftConfig) {
-        this.raftConfig = raftConfig;
+    public MemberManager(PropertiesReader<RaftConfig> propertiesReader) {
+        this.propertiesReader = propertiesReader;
+        this.raftConfig = propertiesReader.getProperties();
     }
     
     /**
@@ -79,15 +91,7 @@ public class MemberManager implements RaftMemberManager {
         // load member
         List<String> memberAddresses = raftConfig.getMemberAddresses();
         for (String addr : memberAddresses) {
-            Member member = new Member();
-            member.setStatus(NodeStatus.DOWN);
-            member.setRole(NodeRole.FOLLOWER);
-            member.setAddress(addr);
-            if (addr.matches(IP_PORT_ADDR_FORMAT)) {
-                String[] split = addr.split(":");
-                member.setIp(split[0]);
-                member.setPort(Integer.parseInt(split[1]));
-            }
+            Member member = buildRawMember(addr);
             members.add(member);
         }
         // create connection
@@ -97,17 +101,36 @@ public class MemberManager implements RaftMemberManager {
     }
     
     /**
+     * get raw member
+     *
+     * @param addr member address
+     * @return new member
+     */
+    private Member buildRawMember(String addr) {
+        Member member = new Member();
+        member.setStatus(NodeStatus.DOWN);
+        member.setRole(NodeRole.FOLLOWER);
+        member.setAddress(addr);
+        if (addr.matches(IP_PORT_ADDR_FORMAT)) {
+            String[] split = addr.split(":");
+            member.setIp(split[0]);
+            member.setPort(Integer.parseInt(split[1]));
+        }
+        return member;
+    }
+    
+    /**
      * create connection
      *
      * @param member target host
      * @return conn
      */
     private Connection createConnection(Member member) {
-        //初始化连接
+        // init channel
         ManagedChannel channel = ManagedChannelBuilder.forAddress(member.getIp(), member.getPort())
                 .usePlaintext()
                 .build();
-        //初始化远程服务Stub
+        // init service rpc Stub
         RequesterGrpc.RequesterBlockingStub blockingStub = RequesterGrpc.newBlockingStub(channel);
         return new GrpcConnection(member.getAddress(), blockingStub);
     }
@@ -123,16 +146,7 @@ public class MemberManager implements RaftMemberManager {
     }
     
     @Override
-    public boolean addNewMember(String addr) {
-        if (isMemberChanging()) {
-            throw new IllegalStateException("Current cluster has not completed the last member change");
-        }
-//        isChangingMember.set(true);
-//        // new request
-//        List<String> newMembers = members.stream().map(Member::getAddress).collect(Collectors.toList());
-//        newMembers.add(addr);
-//        // try to request
-//        MemberChangeRequest request = new MemberChangeRequest(newMembers);
+    public boolean addNewMember(String addr) throws LogException {
         throw new UnsupportedOperationException("Current version don't support member change!");
     }
     
@@ -162,51 +176,6 @@ public class MemberManager implements RaftMemberManager {
     @Override
     public boolean isLeader() {
         return NodeRole.LEADER.equals(self.getRole());
-    }
-    
-    /**
-     * send request to all members
-     *
-     * @param request request
-     * @return whether success half of all
-     */
-    @Override
-    public boolean batchRequestMembers(Request request, Predicate<Response> predicate) throws Exception {
-        List<Member> members = getAllMember();
-        // begin to request
-        AtomicInteger count = new AtomicInteger(1);
-        CountDownLatch countDownLatch = new CountDownLatch(members.size());
-        for (Member member : members) {
-            try {
-                Connection connection = member.getConnection();
-                connection.request(request, new ResponseCallBack() {
-                    
-                    @Override
-                    public void onSuccess(Response response) {
-                        if (predicate.test(response)) {
-                            count.incrementAndGet();
-                        }
-                        countDownLatch.countDown();
-                    }
-                    
-                    @Override
-                    public void onFail(Exception e) {
-                        // nothing to do
-                        countDownLatch.countDown();
-                    }
-                    
-                    @Override
-                    public void onTimeout() {
-                        // nothing to do
-                    }
-                });
-            } catch (Exception e) {
-                // nothing to do
-                e.printStackTrace();
-            }
-        }
-        countDownLatch.await(members.size() * 2500, TimeUnit.MICROSECONDS);
-        return count.get() > (members.size() + 1) / 2;
     }
     
     @Override
