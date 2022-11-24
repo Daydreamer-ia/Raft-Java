@@ -75,6 +75,11 @@ public abstract class AbstractRaftServer {
     protected RequestHandlerHolder requestHandlerHolder;
     
     /**
+     * append log
+     */
+    private AtomicBoolean sendLogBeforeMemberChange = new AtomicBoolean(false);
+    
+    /**
      * vote executor
      */
     private ExecutorService executorService = new ThreadPoolExecutor(1, 1, 1000, TimeUnit.MICROSECONDS,
@@ -163,7 +168,8 @@ public abstract class AbstractRaftServer {
                         // prevote, try to increase term of current node
                         if (prevote()) {
                             raftMemberManager.getSelf().increaseTerm();
-                            LOGGER.info("Server member increase its term, member: " + raftMemberManager.getSelf().getAddress() + ", term: " + raftMemberManager.getSelf().getTerm());
+                            LOGGER.info("Server member increase its term, member: " + raftMemberManager.getSelf()
+                                    .getAddress() + ", term: " + raftMemberManager.getSelf().getTerm());
                         } else {
                             continue;
                         }
@@ -171,6 +177,8 @@ public abstract class AbstractRaftServer {
                         // current may be leader
                         if (requestVote()) {
                             getSelf().setRole(NodeRole.LEADER);
+                            // ask to send no-op log before member change
+                            sendLogBeforeMemberChange.set(false);
                             // syn log id
                             synAllMember();
                             normalCluster.compareAndSet(false, true);
@@ -268,6 +276,22 @@ public abstract class AbstractRaftServer {
      */
     public int getLastTermCurrentNodeHasVoted() {
         return lastTermCurrentNodeHasVoted;
+    }
+    
+    /**
+     * remark send log, it should be invoke after send log success
+     */
+    public void sendLog() {
+        sendLogBeforeMemberChange.compareAndSet(false, true);
+    }
+    
+    /**
+     * whether has send log in current term
+     *
+     * @return whether has send log in current term
+     */
+    public boolean hasSendLogInCurrentTerm() {
+        return sendLogBeforeMemberChange.get();
     }
     
     /**
