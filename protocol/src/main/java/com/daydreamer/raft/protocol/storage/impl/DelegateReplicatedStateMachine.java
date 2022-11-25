@@ -52,7 +52,6 @@ public class DelegateReplicatedStateMachine implements ReplicatedStateMachine {
         if (getLastCommittedLogId() == logId) {
             return true;
         }
-        long lastUncommittedLogIndex = getLastUncommittedLogId();
         // get uncommitted log until logId
         List<LogEntry> logReadyToCommit = getUncommittedLogUntil(logId);
         boolean continueOp = true;
@@ -64,11 +63,9 @@ public class DelegateReplicatedStateMachine implements ReplicatedStateMachine {
             return false;
         }
         // get log ready to commit
-        long logIndex = lastUncommittedLogIndex + 1;
         boolean commit = replicatedStateMachine.commit(term, logId);
         if (commit) {
             for (LogEntry log : logReadyToCommit) {
-                log = getLogById(logIndex);
                 logPostProcessorHolder.handleAfterCommit(log);
             }
             LOGGER.info("Member: " + raftMemberManager.getSelf().getAddress() + ", " + replicatedStateMachine
