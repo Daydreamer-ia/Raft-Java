@@ -43,12 +43,28 @@ public class RaftProtocol implements Protocol {
     private LogSender logSender;
     
     public RaftProtocol(String raftConfigPath) {
+        init(raftConfigPath, null);
+    }
+    
+    public RaftProtocol(RaftConfig raftConfig) {
+        init(null, raftConfig);
+    }
+    
+    /**
+     * init
+     */
+    private void init(String raftConfigPath, RaftConfig raftConfig) {
         // init reader, avoid gc
-        PropertiesReader<RaftConfig> raftConfigPropertiesReader = new RaftPropertiesReader(raftConfigPath);
+        PropertiesReader<RaftConfig> raftConfigPropertiesReader = null;
+        if (raftConfig != null) {
+            raftConfigPropertiesReader = new RaftPropertiesReader(null, false);
+        } else {
+            raftConfigPropertiesReader = new RaftPropertiesReader(raftConfigPath, true);
+        }
         raftMemberManager = new MemberManager(raftConfigPropertiesReader);
         replicatedStateMachine = new DelegateReplicatedStateMachine(raftMemberManager,
                 new MemoryReplicatedStateMachine(), new LogPostProcessorHolder());
-        raftConfig = raftConfigPropertiesReader.getProperties();
+        this.raftConfig = raftConfigPropertiesReader.getProperties();
         logSender = new DefaultLogSender(raftMemberManager, replicatedStateMachine);
         // init server
         this.raftServer = new GrpcRaftServer(raftConfigPropertiesReader, raftMemberManager,
@@ -135,8 +151,8 @@ public class RaftProtocol implements Protocol {
         if (payload.getObject().getMemberChange() == null) {
             throw new IllegalArgumentException("Illegal request for member changing!");
         }
-        // if has send
-        // TODO finish member change follow
+        // try to write
+        write(payload);
     }
     
     @Override

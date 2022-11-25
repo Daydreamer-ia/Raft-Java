@@ -17,8 +17,8 @@ public class RaftPropertiesReader extends PropertiesReader<RaftConfig> {
     
     private static final Logger LOGGER = Logger.getLogger(RaftPropertiesReader.class);
     
-    public RaftPropertiesReader(String filePath) {
-        super(filePath, new RaftConfig());
+    public RaftPropertiesReader(String filePath, boolean open) {
+        super(filePath, new RaftConfig(), open);
     }
     
     @Override

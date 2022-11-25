@@ -42,20 +42,32 @@ public abstract class PropertiesReader<T extends ActiveProperties> {
      */
     private String hash = "";
     
-    public PropertiesReader(String filePath, T properties) {
+    /**
+     * whether open
+     */
+    private boolean open;
+    
+    public PropertiesReader(String filePath, T properties, boolean open) {
         this.filePath = filePath;
         this.properties = properties;
-        executorService = new ThreadPoolExecutor(1, 1, 1000, TimeUnit.MICROSECONDS, new LinkedBlockingQueue<>(), r -> {
-            Thread thread = new Thread(r);
-            thread.setDaemon(true);
-            thread.setName("Watch-Dog-Thread-For-File: " + filePath);
-            thread.setUncaughtExceptionHandler((t, e) -> {
-                LOGGER.error("Fail to execute watch job, because: " + e.getLocalizedMessage());
+        this.open = open;
+        if (this.open) {
+            executorService = new ThreadPoolExecutor(1, 1, 1000, TimeUnit.MICROSECONDS, new LinkedBlockingQueue<>(), r -> {
+                Thread thread = new Thread(r);
+                thread.setDaemon(true);
+                thread.setName("Watch-Dog-Thread-For-File: " + filePath);
+                thread.setUncaughtExceptionHandler((t, e) -> {
+                    LOGGER.error("Fail to execute watch job, because: " + e.getLocalizedMessage());
+                });
+                return thread;
             });
-            return thread;
-        });
-        // init
-        init();
+            // init
+            init();
+        }
+    }
+    
+    public boolean isOpen() {
+        return open;
     }
     
     /**
@@ -135,7 +147,9 @@ public abstract class PropertiesReader<T extends ActiveProperties> {
      * close
      */
     public void close() {
-        executorService.shutdown();
+        if (executorService != null) {
+            executorService.shutdown();
+        }
     }
     
     /**

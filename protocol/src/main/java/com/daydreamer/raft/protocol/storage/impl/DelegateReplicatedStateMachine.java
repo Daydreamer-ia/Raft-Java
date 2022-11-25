@@ -1,7 +1,6 @@
 package com.daydreamer.raft.protocol.storage.impl;
 
 import com.daydreamer.raft.api.entity.base.LogEntry;
-import com.daydreamer.raft.protocol.chain.LogPostProcessor;
 import com.daydreamer.raft.protocol.chain.LogPostProcessorHolder;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.exception.LogException;
