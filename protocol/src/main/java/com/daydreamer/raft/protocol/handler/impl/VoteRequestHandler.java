@@ -20,6 +20,16 @@ public class VoteRequestHandler implements RequestHandler<VoteRequest, VoteRespo
         RaftMemberManagerAware, RaftServerAware, StorageRepositoryAware {
     
     /**
+     * if reject
+     */
+    private static final VoteResponse REJECT = new VoteResponse(false);
+    
+    /**
+     * if accept
+     */
+    private static final VoteResponse ACCEPTED = new VoteResponse(true);
+    
+    /**
      * raftMemberManager
      */
     private RaftMemberManager raftMemberManager;
@@ -36,9 +46,13 @@ public class VoteRequestHandler implements RequestHandler<VoteRequest, VoteRespo
     
     @Override
     public synchronized VoteResponse handle(VoteRequest request) {
+        // reject vote if leader existed
+        if (raftServer.leaderExisted()) {
+            return REJECT;
+        }
         // if current node has voted this term, then reject
         if (request.getTerm() <= raftServer.getLastTermCurrentNodeHasVoted()) {
-            return new VoteResponse(false);
+            return REJECT;
         }
         // determine whether to vote base on lastVotedTerm
         int term = request.getTerm();
@@ -47,17 +61,17 @@ public class VoteRequestHandler implements RequestHandler<VoteRequest, VoteRespo
         synchronized (replicatedStateMachine) {
             // lower term
             if (term < raftMemberManager.getSelf().getLogId()) {
-                return new VoteResponse(false);
+                return REJECT;
             }
             // update last term
             raftServer.refreshLastVotedTerm(request.getTerm());
             // lower log id
             if (logIndex < raftMemberManager.getSelf().getLogId()) {
-                return new VoteResponse(false);
+                return REJECT;
             }
             // refresh may be leader active time
             raftServer.refreshLeaderActive();
-            return new VoteResponse(true);
+            return ACCEPTED;
         }
     }
     

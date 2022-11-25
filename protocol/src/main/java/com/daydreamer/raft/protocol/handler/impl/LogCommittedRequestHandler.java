@@ -27,14 +27,14 @@ public class LogCommittedRequestHandler
         try {
             long logId = request.getLogId();
             int term = request.getTerm();
+            // commit if not committed
             if (replicatedStateMachine.getLastUncommittedLogId() >= request.getLogId()) {
                 LogEntry logEntry = replicatedStateMachine.getLogById(logId);
                 if (logEntry != null && logEntry.getTerm() == term) {
                     replicatedStateMachine.commit(term, logId);
-                    return new EntryCommittedResponse(true);
                 }
             }
-            return new EntryCommittedResponse(false);
+            return new EntryCommittedResponse(true);
         } catch (Exception e) {
             LOGGER.error("Fail to commit log, because: "+ e.getMessage());
             return new ServerErrorResponse(e.getMessage(), ResponseCode.ERROR_SERVER);

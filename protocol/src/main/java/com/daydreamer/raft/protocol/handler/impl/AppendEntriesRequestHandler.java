@@ -56,19 +56,26 @@ public class AppendEntriesRequestHandler
             }
             // try to find
             LogEntry lastLog = replicatedStateMachine.getLogById(leaderLastLogId);
-            // if found, then append
-            if (lastLog != null && lastLog.getTerm() == leaderLastLogTerm) {
-                // append all
-                for (LogEntry logEntry : logEntries) {
-                    replicatedStateMachine.append(logEntry);
+            // if uncommitted, try to append
+            if (replicatedStateMachine.getLastCommittedLogId() < logEntries.get(logEntries.size() - 1).getLogId()) {
+                // if found, then append
+                if (lastLog != null && lastLog.getTerm() == leaderLastLogTerm) {
+                    // append all
+                    for (LogEntry logEntry : logEntries) {
+                        replicatedStateMachine.append(logEntry);
+                    }
+                    // update log index
+                    raftMemberManager.getSelf().setLogId(logEntries.get(logEntries.size() - 1).getLogId());
+                    return new AppendEntriesResponse(true);
                 }
-                // update log index
-                raftMemberManager.getSelf().setLogId(logEntries.get(logEntries.size() - 1).getLogId());
-                return new AppendEntriesResponse(true);
+                // cannot found, then ask leader to syn ahead
+                else {
+                    return new AppendEntriesResponse(false);
+                }
             }
-            // cannot found, then ask leader to syn ahead
+            // if has committed
             else {
-                return new AppendEntriesResponse(false);
+                return new AppendEntriesResponse(true);
             }
         } catch (Exception e) {
             // nothing to do
