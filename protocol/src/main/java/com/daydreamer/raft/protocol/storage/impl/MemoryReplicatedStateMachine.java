@@ -42,14 +42,6 @@ public class MemoryReplicatedStateMachine implements ReplicatedStateMachine {
     
     @Override
     public synchronized boolean commit(int term, long logId) throws LogException {
-        // no uncommitted log
-        if (lastUncommittedLogId == -1) {
-            return false;
-        }
-        // has committed
-        if (lastCommittedLogId == logId) {
-            return true;
-        }
         // get last uncommitted log
         LogEntry lastUncommittedLog = logEntriesList.get(lastUncommittedLogIndex);
         // if log id smaller, normal

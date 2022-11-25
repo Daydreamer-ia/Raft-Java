@@ -6,7 +6,7 @@ import com.daydreamer.raft.api.entity.constant.ResponseCode;
 import com.daydreamer.raft.api.entity.request.EntryCommittedRequest;
 import com.daydreamer.raft.api.entity.response.EntryCommittedResponse;
 import com.daydreamer.raft.api.entity.response.ServerErrorResponse;
-import com.daydreamer.raft.protocol.aware.StorageRepositoryAware;
+import com.daydreamer.raft.protocol.aware.ReplicatedStateMachineAware;
 import com.daydreamer.raft.protocol.handler.RequestHandler;
 import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 
@@ -16,7 +16,7 @@ import org.apache.log4j.Logger;
  * @author Daydreamer
  */
 public class LogCommittedRequestHandler
-        implements RequestHandler<EntryCommittedRequest, Response>, StorageRepositoryAware {
+        implements RequestHandler<EntryCommittedRequest, Response>, ReplicatedStateMachineAware {
     
     private static final Logger LOGGER = Logger.getLogger(LogCommittedRequestHandler.class);
     

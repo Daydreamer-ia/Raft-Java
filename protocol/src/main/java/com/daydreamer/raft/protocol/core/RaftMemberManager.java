@@ -37,9 +37,8 @@ public interface RaftMemberManager extends Closeable {
      *
      * @param addr new member
      * @return whether add successfully
-     * @throws LogException log exception
      */
-    boolean addNewMember(String addr) throws LogException;
+    boolean addNewMember(String addr);
     
     /**
      * remove a existed member
@@ -48,13 +47,6 @@ public interface RaftMemberManager extends Closeable {
      * @return whether remove successfully
      */
     boolean removeMember(String id);
-    
-    /**
-     * whether changing member
-     *
-     * @return whether changing member
-     */
-    boolean isMemberChanging();
     
     /**
      * get self as member

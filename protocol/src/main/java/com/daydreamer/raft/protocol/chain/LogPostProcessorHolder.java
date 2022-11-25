@@ -1,6 +1,11 @@
 package com.daydreamer.raft.protocol.chain;
 
-import com.daydreamer.raft.protocol.handler.RequestHandlerHolder;
+import com.daydreamer.raft.api.entity.base.LogEntry;
+import com.daydreamer.raft.protocol.core.AbstractRaftServer;
+import com.daydreamer.raft.protocol.core.RaftMemberManager;
+import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -14,7 +19,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p>
  * registry for {@link LogPostProcessor}
  */
-public class LogPostProcessorHolder {
+public class LogPostProcessorHolder implements LogPostProcessor {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(LogPostProcessorHolder.class);
     
     private static final String PROCESSOR_PACKAGE = "com/daydreamer/raft/protocol/chain/impl";
     
@@ -26,10 +33,31 @@ public class LogPostProcessorHolder {
     
     private List<LogPostProcessor> postProcessors = new ArrayList<>();
     
+    private RaftMemberManager raftMemberManager;
+    
+    private AbstractRaftServer abstractRaftServer;
+    
+    private ReplicatedStateMachine replicatedStateMachine;
+    
     /**
      * whether init
      */
     private AtomicBoolean finishInit = new AtomicBoolean(false);
+    
+    
+    /**
+     * scan package and init
+     *
+     * @param raftMemberManager  raftMemberManager
+     * @param replicatedStateMachine  storageRepository
+     * @param abstractRaftServer abstractRaftServer
+     */
+    public LogPostProcessorHolder(RaftMemberManager raftMemberManager, AbstractRaftServer abstractRaftServer,
+            ReplicatedStateMachine replicatedStateMachine) {
+        this.raftMemberManager = raftMemberManager;
+        this.abstractRaftServer = abstractRaftServer;
+        this.replicatedStateMachine = replicatedStateMachine;
+    }
     
     public LogPostProcessorHolder() {
         init();
@@ -45,7 +73,7 @@ public class LogPostProcessorHolder {
         try {
             // load instance
             File file = new File(
-                    Objects.requireNonNull(RequestHandlerHolder.class.getClassLoader().getResource(PROCESSOR_PACKAGE))
+                    Objects.requireNonNull(LogPostProcessorHolder.class.getClassLoader().getResource(PROCESSOR_PACKAGE))
                             .getFile());
             File[] files = file.listFiles();
             String packagePrefix = PROCESSOR_PACKAGE.replaceAll("/", ".");
@@ -60,6 +88,7 @@ public class LogPostProcessorHolder {
                 finishInit.set(true);
             }
         } catch (Exception e) {
+            e.printStackTrace();
             throw new IllegalStateException("Can not load base processor for request", e);
         }
     }
@@ -78,7 +107,55 @@ public class LogPostProcessorHolder {
      *
      * @param logPostProcessor new processor
      */
-    public void register(LogPostProcessor logPostProcessor) {
+    public synchronized void register(LogPostProcessor logPostProcessor) {
         postProcessors.add(logPostProcessor);
+    }
+    
+    @Override
+    public boolean handleBeforeAppend(LogEntry logEntry) {
+        boolean continueNext = true;
+        for (int i = 0; continueNext && i < postProcessors.size(); i++) {
+            try {
+                continueNext = postProcessors.get(i).handleBeforeAppend(logEntry);
+            } catch (Exception e) {
+                LOGGER.error("Fail to handle before appending, because {}, log: {}", e.getMessage(), logEntry);
+            }
+        }
+        return continueNext;
+    }
+    
+    @Override
+    public void handleAfterAppend(LogEntry logEntry) {
+        for (LogPostProcessor postProcessor : postProcessors) {
+            try {
+                postProcessor.handleBeforeAppend(logEntry);
+            } catch (Exception e) {
+                LOGGER.error("Fail to handle after appending, because {}, log: {}", e.getMessage(), logEntry);
+            }
+        }
+    }
+    
+    @Override
+    public void handleAfterCommit(LogEntry logEntry) {
+        for (LogPostProcessor postProcessor : postProcessors) {
+            try {
+                postProcessor.handleAfterCommit(logEntry);
+            } catch (Exception e) {
+                LOGGER.error("Fail to handle after committing, because {}, log: {}", e.getMessage(), logEntry);
+            }
+        }
+    }
+    
+    @Override
+    public boolean handleBeforeCommit(LogEntry logEntry) {
+        boolean continueNext = true;
+        for (int i = 0; continueNext && i < postProcessors.size(); i++) {
+            try {
+                continueNext = postProcessors.get(i).handleBeforeCommit(logEntry);
+            } catch (Exception e) {
+                LOGGER.error("Fail to handle before committing, because {}, log: {}", e.getMessage(), logEntry);
+            }
+        }
+        return continueNext;
     }
 }

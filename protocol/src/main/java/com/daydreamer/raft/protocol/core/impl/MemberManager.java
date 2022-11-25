@@ -1,24 +1,12 @@
 package com.daydreamer.raft.protocol.core.impl;
 
-import com.daydreamer.raft.api.entity.Request;
-import com.daydreamer.raft.api.entity.Response;
-import com.daydreamer.raft.api.entity.base.LogEntry;
-import com.daydreamer.raft.api.entity.base.MemberChangeEntry;
-import com.daydreamer.raft.api.entity.base.Payload;
-import com.daydreamer.raft.api.entity.constant.LogType;
-import com.daydreamer.raft.api.entity.constant.MemberChange;
-import com.daydreamer.raft.api.entity.request.MemberChangeRequest;
-import com.daydreamer.raft.api.entity.response.MemberChangeCommitRequest;
 import com.daydreamer.raft.common.service.PropertiesReader;
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.constant.NodeStatus;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
 import com.daydreamer.raft.protocol.entity.Member;
-import com.daydreamer.raft.protocol.exception.LogException;
-import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 import com.daydreamer.raft.transport.connection.Connection;
-import com.daydreamer.raft.transport.connection.ResponseCallBack;
 import com.daydreamer.raft.transport.connection.impl.grpc.GrpcConnection;
 import com.daydreamer.raft.api.grpc.RequesterGrpc;
 import io.grpc.ManagedChannel;
@@ -146,21 +134,24 @@ public class MemberManager implements RaftMemberManager {
     }
     
     @Override
-    public boolean addNewMember(String addr) throws LogException {
-        throw new UnsupportedOperationException("Current version don't support member change!");
+    public boolean addNewMember(String addr) {
+        Member member = buildRawMember(addr);
+        member.setConnection(createConnection(member));
+        members.add(member);
+        LOGGER.info("Add new member, member: {}, current members list: {}", member, members);
+        return true;
     }
     
     @Override
     public boolean removeMember(String id) {
-        if (isMemberChanging()) {
-            throw new IllegalStateException("Current cluster has not completed the last member change");
-        }
-        throw new UnsupportedOperationException("Current version don't support member change!");
-    }
-    
-    @Override
-    public boolean isMemberChanging() {
-        return isChangingMember.get();
+        return members.removeIf(member -> {
+            if (member.getAddress().equals(id)) {
+                member.getConnection().close();
+                LOGGER.info("Remove member, member: {}, current members list: {}", member, members);
+                return true;
+            }
+            return false;
+        });
     }
     
     @Override

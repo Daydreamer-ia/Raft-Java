@@ -1,6 +1,6 @@
 package com.daydreamer.raft.protocol.handler.impl;
 
-import com.daydreamer.raft.protocol.aware.StorageRepositoryAware;
+import com.daydreamer.raft.protocol.aware.ReplicatedStateMachineAware;
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.handler.RequestHandler;
@@ -17,7 +17,7 @@ import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
  */
 @SuppressWarnings("all")
 public class VoteRequestHandler implements RequestHandler<VoteRequest, VoteResponse>,
-        RaftMemberManagerAware, RaftServerAware, StorageRepositoryAware {
+        RaftMemberManagerAware, RaftServerAware, ReplicatedStateMachineAware {
     
     /**
      * if reject

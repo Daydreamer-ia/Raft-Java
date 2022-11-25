@@ -2,7 +2,7 @@ package com.daydreamer.raft.protocol.handler;
 
 
 import com.daydreamer.raft.protocol.aware.RaftServerAware;
-import com.daydreamer.raft.protocol.aware.StorageRepositoryAware;
+import com.daydreamer.raft.protocol.aware.ReplicatedStateMachineAware;
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.aware.RaftMemberManagerAware;
@@ -108,8 +108,8 @@ public class RequestHandlerHolder {
         if (handler instanceof RaftServerAware) {
             ((RaftServerAware) handler).setRaftServer(abstractRaftServer);
         }
-        if (handler instanceof StorageRepositoryAware) {
-            ((StorageRepositoryAware) handler).setReplicatedStateMachine(replicatedStateMachine);
+        if (handler instanceof ReplicatedStateMachineAware) {
+            ((ReplicatedStateMachineAware) handler).setReplicatedStateMachine(replicatedStateMachine);
         }
     }
     

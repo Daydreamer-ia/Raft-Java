@@ -7,7 +7,7 @@ import com.daydreamer.raft.api.entity.request.AppendEntriesRequest;
 import com.daydreamer.raft.api.entity.response.AppendEntriesResponse;
 import com.daydreamer.raft.api.entity.response.ServerErrorResponse;
 import com.daydreamer.raft.protocol.aware.RaftMemberManagerAware;
-import com.daydreamer.raft.protocol.aware.StorageRepositoryAware;
+import com.daydreamer.raft.protocol.aware.ReplicatedStateMachineAware;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.handler.RequestHandler;
 import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
@@ -19,7 +19,7 @@ import java.util.List;
  * @author Daydreamer
  */
 public class AppendEntriesRequestHandler
-        implements RequestHandler<AppendEntriesRequest, Response>, StorageRepositoryAware, RaftMemberManagerAware {
+        implements RequestHandler<AppendEntriesRequest, Response>, ReplicatedStateMachineAware, RaftMemberManagerAware {
     
     private static final Logger LOGGER = Logger.getLogger(AppendEntriesRequestHandler.class);
     
@@ -43,12 +43,18 @@ public class AppendEntriesRequestHandler
             List<LogEntry> logEntries = request.getLogEntries();
             if (leaderLastLogId == -1) {
                 if (replicatedStateMachine.getLastCommittedLogId() == -1) {
+                    boolean append = false;
                     for (LogEntry logEntry : logEntries) {
-                        replicatedStateMachine.append(logEntry);
+                        append = replicatedStateMachine.append(logEntry);
+                        if (!append) {
+                            break;
+                        }
                     }
-                    // update log index
-                    raftMemberManager.getSelf().setLogId(logEntries.get(logEntries.size() - 1).getLogId());
-                    return new AppendEntriesResponse(true);
+                    if (append) {
+                        // update log index
+                        raftMemberManager.getSelf().setLogId(logEntries.get(logEntries.size() - 1).getLogId());
+                    }
+                    return new AppendEntriesResponse(append);
                 } else {
                     LOGGER.error("First log has committed, cannot cover!");
                     return new ServerErrorResponse("Log has committed", ResponseCode.ERROR_CLIENT);
@@ -61,12 +67,16 @@ public class AppendEntriesRequestHandler
                 // if found, then append
                 if (lastLog != null && lastLog.getTerm() == leaderLastLogTerm) {
                     // append all
+                    boolean append = false;
                     for (LogEntry logEntry : logEntries) {
-                        replicatedStateMachine.append(logEntry);
+                        append = replicatedStateMachine.append(logEntry);
+                        if (!append) {
+                            break;
+                        }
                     }
                     // update log index
                     raftMemberManager.getSelf().setLogId(logEntries.get(logEntries.size() - 1).getLogId());
-                    return new AppendEntriesResponse(true);
+                    return new AppendEntriesResponse(append);
                 }
                 // cannot found, then ask leader to syn ahead
                 else {
@@ -80,12 +90,11 @@ public class AppendEntriesRequestHandler
         } catch (Exception e) {
             // nothing to do
             e.printStackTrace();
-            LogEntry lastCommittedLog = replicatedStateMachine.getCommittedLog(replicatedStateMachine.getLastCommittedLogId());
-            LOGGER.error(
-                    "Fail to append log, leader last term: " + request.getLastTerm()
-                            + ", leader last log id: " + request.getLastLogId() + ", current node committed log term: "
-                            + lastCommittedLog.getTerm() + ", current node committed log id: " + lastCommittedLog
-                            .getLogId());
+            LogEntry lastCommittedLog = replicatedStateMachine
+                    .getCommittedLog(replicatedStateMachine.getLastCommittedLogId());
+            LOGGER.error("Fail to append log, leader last term: " + request.getLastTerm() + ", leader last log id: "
+                    + request.getLastLogId() + ", current node committed log term: " + lastCommittedLog.getTerm()
+                    + ", current node committed log id: " + lastCommittedLog.getLogId());
             return new ServerErrorResponse(e.getMessage(), ResponseCode.ERROR_SERVER);
         }
     }
