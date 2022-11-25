@@ -1,18 +1,21 @@
 package com.daydreamer.raft.protocol.storage.impl;
 
 import com.daydreamer.raft.api.entity.base.LogEntry;
+import com.daydreamer.raft.protocol.chain.LogPostProcessor;
+import com.daydreamer.raft.protocol.chain.LogPostProcessorHolder;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.exception.LogException;
 import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.apache.log4j.Logger;
 
 /**
  * @author Daydreamer
  */
 public class DelegateReplicatedStateMachine implements ReplicatedStateMachine {
     
-    private static final Logger LOGGER = Logger.getLogger(DelegateReplicatedStateMachine.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DelegateReplicatedStateMachine.class);
     
     /**
      * raftMemberManager
@@ -24,25 +27,61 @@ public class DelegateReplicatedStateMachine implements ReplicatedStateMachine {
      */
     private ReplicatedStateMachine replicatedStateMachine;
     
-    public DelegateReplicatedStateMachine(RaftMemberManager raftMemberManager, ReplicatedStateMachine replicatedStateMachine) {
+    /**
+     * logPostProcessorHolder
+     */
+    private LogPostProcessorHolder logPostProcessorHolder;
+    
+    public DelegateReplicatedStateMachine(RaftMemberManager raftMemberManager,
+            ReplicatedStateMachine replicatedStateMachine, LogPostProcessorHolder logPostProcessorHolder) {
         this.raftMemberManager = raftMemberManager;
         this.replicatedStateMachine = replicatedStateMachine;
+        this.logPostProcessorHolder = logPostProcessorHolder;
     }
     
     @Override
     public boolean commit(int term, long logId) throws LogException {
+        long lastUncommittedLogIndex = getLastUncommittedLogId();
         boolean commit = replicatedStateMachine.commit(term, logId);
         if (commit) {
-            LOGGER.info("Member: "+ raftMemberManager.getSelf().getAddress() + ", "+ replicatedStateMachine.getLogById(logId)  +  " commit finish!");
+            long logIndex = lastUncommittedLogIndex + 1;
+            while (logIndex <= getLastCommittedLogId()) {
+                for (LogPostProcessor logPostProcessor : logPostProcessorHolder.getPostProcessors()) {
+                    LogEntry log = null;
+                    try {
+                        log = getLogById(logIndex);
+                        logPostProcessor.handleAfterCommit(log);
+                    } catch (Exception e) {
+                        LOGGER.info("Fail to post process after commit, because {}, log: {}", e.getMessage(), log);
+                    }
+                }
+                logIndex++;
+            }
+            LOGGER.info("Member: " + raftMemberManager.getSelf().getAddress() + ", " + replicatedStateMachine
+                    .getLogById(logId) + " commit finish!");
         }
         return commit;
     }
     
     @Override
     public boolean append(LogEntry logEntry) throws LogException {
+        long lastUncommittedLogIndex = getLastUncommittedLogId();
         boolean append = replicatedStateMachine.append(logEntry);
         if (append) {
-            LOGGER.info("Member: "+ raftMemberManager.getSelf().getAddress() + ", "+ logEntry  +  " append finish!");
+            long logIndex = lastUncommittedLogIndex + 1;
+            while (logIndex <= getLastUncommittedLogId()) {
+                for (LogPostProcessor logPostProcessor : logPostProcessorHolder.getPostProcessors()) {
+                    LogEntry log = null;
+                    try {
+                        log = getLogById(logIndex);
+                        logPostProcessor.handleAfterAppend(log);
+                    } catch (Exception e) {
+                        LOGGER.info("Fail to post process after commit, because {}, log: {}", e.getMessage(), log);
+                    }
+                }
+                logIndex++;
+            }
+            LOGGER.info("Member: " + raftMemberManager.getSelf().getAddress() + ", " + logEntry + " append finish!");
         }
         return append;
     }
