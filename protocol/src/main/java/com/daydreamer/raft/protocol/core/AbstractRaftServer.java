@@ -211,6 +211,17 @@ public abstract class AbstractRaftServer {
     }
     
     /**
+     * whether leader in current cluster
+     *
+     * @return whether leader in current cluster
+     */
+    public boolean leaderExisted() {
+        return NodeRole.FOLLOWER.equals(getSelf().getRole())
+                && System.currentTimeMillis() - leaderLastActiveTime > raftConfig
+                .getAbnormalActiveInterval();
+    }
+    
+    /**
      * get self
      *
      * @return self

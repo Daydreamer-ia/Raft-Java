@@ -1,6 +1,5 @@
 package com.daydreamer.raft.protocol.core.impl;
 
-import com.daydreamer.raft.api.entity.Response;
 import com.daydreamer.raft.api.entity.base.CommittedResponse;
 import com.daydreamer.raft.api.entity.base.LogEntry;
 import com.daydreamer.raft.api.entity.base.MemberChangeEntry;
@@ -8,6 +7,7 @@ import com.daydreamer.raft.api.entity.base.Payload;
 import com.daydreamer.raft.api.entity.constant.LogType;
 import com.daydreamer.raft.api.entity.request.EntryCommittedRequest;
 import com.daydreamer.raft.common.service.PropertiesReader;
+import com.daydreamer.raft.protocol.chain.LogPostProcessorHolder;
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
 import com.daydreamer.raft.protocol.core.LogSender;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
@@ -47,7 +47,7 @@ public class RaftProtocol implements Protocol {
         PropertiesReader<RaftConfig> raftConfigPropertiesReader = new RaftPropertiesReader(raftConfigPath);
         raftMemberManager = new MemberManager(raftConfigPropertiesReader);
         replicatedStateMachine = new DelegateReplicatedStateMachine(raftMemberManager,
-                new MemoryReplicatedStateMachine());
+                new MemoryReplicatedStateMachine(), new LogPostProcessorHolder());
         raftConfig = raftConfigPropertiesReader.getProperties();
         logSender = new DefaultLogSender(raftMemberManager, replicatedStateMachine);
         // init server
