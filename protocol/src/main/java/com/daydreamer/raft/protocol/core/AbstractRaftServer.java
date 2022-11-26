@@ -12,7 +12,9 @@ import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -28,6 +30,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class AbstractRaftServer {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRaftServer.class.getSimpleName());
+    
+    /**
+     * no-op
+     */
+    private static final Map<String, String> NO_OP_META_DATA = new HashMap<>();
     
     /**
      * if there is a leader in cluster
@@ -127,6 +134,7 @@ public abstract class AbstractRaftServer {
             // init job to vote
             initAskVoteLeaderJob();
         } catch (Exception e) {
+            e.printStackTrace();
             throw new IllegalStateException("Fail to start raft server, because " + e.getLocalizedMessage());
         }
     }
@@ -149,6 +157,11 @@ public abstract class AbstractRaftServer {
         executorService.execute(() -> {
             try {
                 while (!executorService.isShutdown()) {
+                    // close if leave cluster
+                    if (raftMemberManager.isSelfLeave()) {
+                        close();
+                        return;
+                    }
                     // wait a random time
                     int waitTime =
                             raftConfig.getVoteBaseTime() + new Random().nextInt(raftConfig.getVoteBaseTime() / 2);
@@ -157,7 +170,7 @@ public abstract class AbstractRaftServer {
                     //   if current node is leader
                     //   if cluster has leader base on leaderLastActiveTime variable
                     //   if current node receive a vote request from other in this term
-                    if (isLeader()) {
+                    if (isLeader() || raftMemberManager.isSelfLeave()) {
                         continue;
                     }
                     // if follower and timeout
@@ -187,15 +200,16 @@ public abstract class AbstractRaftServer {
                             synAllMember();
                             normalCluster.compareAndSet(false, true);
                             LOGGER.info(
-                                    "Server node has been leader, member: " + raftMemberManager.getSelf().getAddress());
+                                    "Server node has been leader, leader: {}, members list: {}", raftMemberManager.getSelf().getAddress(), raftMemberManager.getAllMember());
                             // send no-op
                             Member self = raftMemberManager.getSelf();
                             LogEntry noOp = new LogEntry(self.getTerm(), self.getLogId() + 1,
-                                    new Payload<>("", LogType.NO_OP));
+                                    new Payload(NO_OP_META_DATA, LogType.NO_OP));
                             for (Member member : raftMemberManager.getAllMember()) {
                                 try {
                                     logSender.appendLog(member, noOp);
                                 } catch (Exception e) {
+                                    e.printStackTrace();
                                     LOGGER.error("Fail to append no-op log, member: {}, because {}", member.getAddress(), e.getMessage());
                                 }
                             }
@@ -311,8 +325,10 @@ public abstract class AbstractRaftServer {
      * close
      */
     public void close() {
+        Member self = raftMemberManager.getSelf();
         raftMemberManager.close();
         abstractFollowerNotifier.close();
         replicatedStateMachine.close();
+        LOGGER.info("Server: {} Close finish!", self.getAddress());
     }
 }

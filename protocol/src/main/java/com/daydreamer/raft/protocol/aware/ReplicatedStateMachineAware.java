@@ -5,7 +5,7 @@ import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 /**
  * @author Daydreamer
  */
-public interface StorageRepositoryAware {
+public interface ReplicatedStateMachineAware {
     
     /**
      * setter for StorageRepositoryAware

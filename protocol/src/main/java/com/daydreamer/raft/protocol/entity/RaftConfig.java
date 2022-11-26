@@ -19,14 +19,14 @@ public class RaftConfig implements ActiveProperties {
     private List<String> memberAddresses;
     
     /**
+     * server ip
+     */
+    private String serverAddr;
+    
+    /**
      * current node will tell follower to keep if current node is leader and timeout
      */
     private int heartInterval = 1000;
-    
-    /**
-     * server port
-     */
-    private int port = 0;
     
     /**
      * current node will ask votes if timeout
@@ -47,6 +47,14 @@ public class RaftConfig implements ActiveProperties {
      * write fail, then retry <code>writeRetryTimes</code>
      */
     private int writeRetryTimes = 2;
+    
+    public String getServerAddr() {
+        return serverAddr;
+    }
+    
+    public void setServerAddr(String serverAddr) {
+        this.serverAddr = serverAddr;
+    }
     
     public int getWriteRetryTimes() {
         return writeRetryTimes;
@@ -94,13 +102,5 @@ public class RaftConfig implements ActiveProperties {
     
     public void setHeartInterval(int heartInterval) {
         this.heartInterval = heartInterval;
-    }
-    
-    public int getPort() {
-        return port;
-    }
-    
-    public void setPort(int port) {
-        this.port = port;
     }
 }

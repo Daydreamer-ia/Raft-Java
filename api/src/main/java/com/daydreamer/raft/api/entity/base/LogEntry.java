@@ -21,9 +21,9 @@ public class LogEntry implements Serializable {
     /**
      * data
      */
-    private Payload<?> payload;
+    private Payload payload;
     
-    public LogEntry(int term, long logId, Payload<?> payload) {
+    public LogEntry(int term, long logId, Payload payload) {
         this.term = term;
         this.logId = logId;
         this.payload = payload;
@@ -50,11 +50,11 @@ public class LogEntry implements Serializable {
         this.logId = logId;
     }
     
-    public Payload<?> getPayload() {
+    public Payload getPayload() {
         return payload;
     }
     
-    public void setPayload(Payload<?> payload) {
+    public void setPayload(Payload payload) {
         this.payload = payload;
     }
     

@@ -17,7 +17,7 @@ public interface Protocol {
      * @return whether committed
      * @throws Exception abnormal cluster
      */
-    boolean write(Payload<?> payload) throws Exception;
+    boolean write(Payload payload) throws Exception;
     
     /**
      * read
@@ -27,9 +27,11 @@ public interface Protocol {
     /**
      * member change
      *
-     * @param payload which member change
+     * @param memberChangeEntry which member change
+     * @throws Exception Exception
+     * @return whether change successfully
      */
-    void memberChange(Payload<MemberChangeEntry> payload) throws Exception;
+    boolean memberChange(MemberChangeEntry memberChangeEntry) throws Exception;
     
     /**
      * start

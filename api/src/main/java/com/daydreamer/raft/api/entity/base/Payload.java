@@ -3,30 +3,31 @@ package com.daydreamer.raft.api.entity.base;
 import com.daydreamer.raft.api.entity.constant.LogType;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * @author Daydreamer
  */
-public class Payload<T> implements Serializable {
+public class Payload implements Serializable {
     
-    private T object;
+    private Map<String, String> metadata;
     
     private LogType logType;
     
     public Payload() {
     }
     
-    public Payload(T object, LogType logType) {
-        this.object = object;
+    public Payload(Map<String, String> object, LogType logType) {
+        this.metadata = object;
         this.logType = logType;
     }
     
-    public T getObject() {
-        return object;
+    public Map<String, String> getMetadata() {
+        return metadata;
     }
     
-    public void setObject(T object) {
-        this.object = object;
+    public void setMetadata(Map<String, String> metadata) {
+        this.metadata = metadata;
     }
     
     public LogType getLogType() {

@@ -1,24 +1,12 @@
 package com.daydreamer.raft.protocol.core.impl;
 
-import com.daydreamer.raft.api.entity.Request;
-import com.daydreamer.raft.api.entity.Response;
-import com.daydreamer.raft.api.entity.base.LogEntry;
-import com.daydreamer.raft.api.entity.base.MemberChangeEntry;
-import com.daydreamer.raft.api.entity.base.Payload;
-import com.daydreamer.raft.api.entity.constant.LogType;
-import com.daydreamer.raft.api.entity.constant.MemberChange;
-import com.daydreamer.raft.api.entity.request.MemberChangeRequest;
-import com.daydreamer.raft.api.entity.response.MemberChangeCommitRequest;
 import com.daydreamer.raft.common.service.PropertiesReader;
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.constant.NodeStatus;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
 import com.daydreamer.raft.protocol.entity.Member;
-import com.daydreamer.raft.protocol.exception.LogException;
-import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 import com.daydreamer.raft.transport.connection.Connection;
-import com.daydreamer.raft.transport.connection.ResponseCallBack;
 import com.daydreamer.raft.transport.connection.impl.grpc.GrpcConnection;
 import com.daydreamer.raft.api.grpc.RequesterGrpc;
 import io.grpc.ManagedChannel;
@@ -26,11 +14,9 @@ import io.grpc.ManagedChannelBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -52,11 +38,6 @@ public class MemberManager implements RaftMemberManager {
     
     private List<Member> members = new ArrayList<>();
     
-    /**
-     * whether changing members
-     */
-    private AtomicBoolean isChangingMember = new AtomicBoolean(false);
-    
     public MemberManager(PropertiesReader<RaftConfig> propertiesReader) {
         this.propertiesReader = propertiesReader;
         this.raftConfig = propertiesReader.getProperties();
@@ -67,17 +48,11 @@ public class MemberManager implements RaftMemberManager {
      */
     public void initSelf() {
         try {
-            String ip = InetAddress.getLocalHost().getHostAddress();
-            int port = raftConfig.getPort();
-            Member tmp = new Member();
-            tmp.setIp(ip);
-            tmp.setPort(port);
-            tmp.setAddress(ip + ":" + port);
-            tmp.setRole(NodeRole.CANDIDATE, null);
-            tmp.setMemberId(ip + ":" + port);
-            tmp.setStatus(NodeStatus.UP);
+            String serverAddr = raftConfig.getServerAddr();
+            Member tmp = buildRawMember(serverAddr);
             tmp.setTerm(0);
             tmp.setLogId(-1);
+            tmp.setStatus(NodeStatus.UP);
             self = tmp;
         } catch (Exception e) {
             throw new IllegalStateException("[MemberManager] - Fail to init self message!");
@@ -146,21 +121,27 @@ public class MemberManager implements RaftMemberManager {
     }
     
     @Override
-    public boolean addNewMember(String addr) throws LogException {
-        throw new UnsupportedOperationException("Current version don't support member change!");
+    public boolean addNewMember(String addr) {
+        Member member = buildRawMember(addr);
+        member.setConnection(createConnection(member));
+        members.add(member);
+        LOGGER.info("Add new member, member: {}, current members list: {}", member, members);
+        return true;
     }
     
     @Override
     public boolean removeMember(String id) {
-        if (isMemberChanging()) {
-            throw new IllegalStateException("Current cluster has not completed the last member change");
+        boolean remove =  members.removeIf(member -> {
+            if (member.getAddress().equals(id)) {
+                member.getConnection().close();
+                return true;
+            }
+            return false;
+        });
+        if (remove) {
+            LOGGER.info("Remove member: {}, current members list: {}", id, members);
         }
-        throw new UnsupportedOperationException("Current version don't support member change!");
-    }
-    
-    @Override
-    public boolean isMemberChanging() {
-        return isChangingMember.get();
+        return remove;
     }
     
     @Override
@@ -176,6 +157,20 @@ public class MemberManager implements RaftMemberManager {
     @Override
     public boolean isLeader() {
         return NodeRole.LEADER.equals(self.getRole());
+    }
+    
+    @Override
+    public boolean isSelfLeave() {
+        return members.isEmpty();
+    }
+    
+    @Override
+    public void removeSelf() {
+        close();
+        members.clear();
+        LOGGER.info("Current member: {} has leave cluster", self.getAddress());
+        // down to follower
+        self.setRole(NodeRole.FOLLOWER);
     }
     
     @Override

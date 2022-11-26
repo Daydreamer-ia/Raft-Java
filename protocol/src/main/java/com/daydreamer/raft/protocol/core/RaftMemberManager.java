@@ -1,7 +1,6 @@
 package com.daydreamer.raft.protocol.core;
 
 import com.daydreamer.raft.protocol.entity.Member;
-import com.daydreamer.raft.protocol.exception.LogException;
 import com.daydreamer.raft.transport.connection.Closeable;
 
 import java.util.List;
@@ -37,9 +36,8 @@ public interface RaftMemberManager extends Closeable {
      *
      * @param addr new member
      * @return whether add successfully
-     * @throws LogException log exception
      */
-    boolean addNewMember(String addr) throws LogException;
+    boolean addNewMember(String addr);
     
     /**
      * remove a existed member
@@ -48,13 +46,6 @@ public interface RaftMemberManager extends Closeable {
      * @return whether remove successfully
      */
     boolean removeMember(String id);
-    
-    /**
-     * whether changing member
-     *
-     * @return whether changing member
-     */
-    boolean isMemberChanging();
     
     /**
      * get self as member
@@ -77,4 +68,16 @@ public interface RaftMemberManager extends Closeable {
      * @return whether current node is leader
      */
     boolean isLeader();
+    
+    /**
+     * whether current node leave
+     *
+     * @return leave
+     */
+    boolean isSelfLeave();
+    
+    /**
+     * remove self
+     */
+    void removeSelf();
 }

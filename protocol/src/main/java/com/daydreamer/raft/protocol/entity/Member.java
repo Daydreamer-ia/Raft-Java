@@ -160,4 +160,9 @@ public class Member {
     public void setAddress(String address) {
         this.address = address;
     }
+    
+    @Override
+    public String toString() {
+        return "Member{" + "address='" + address + '\'' + '}';
+    }
 }
