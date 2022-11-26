@@ -17,8 +17,12 @@ public class RaftPropertiesReader extends PropertiesReader<RaftConfig> {
     
     private static final Logger LOGGER = Logger.getLogger(RaftPropertiesReader.class);
     
-    public RaftPropertiesReader(String filePath, boolean open) {
-        super(filePath, new RaftConfig(), open);
+    public RaftPropertiesReader(String filePath) {
+        super(filePath, new RaftConfig(), true);
+    }
+    
+    public RaftPropertiesReader(RaftConfig raftConfig) {
+        super(null, raftConfig, false);
     }
     
     @Override
@@ -40,14 +44,6 @@ public class RaftPropertiesReader extends PropertiesReader<RaftConfig> {
                 int h = Integer.parseInt(heartbeat);
                 activeProperties.setHeartInterval(h);
             }
-            String port = properties.getProperty(RaftProperty.SERVER_PORT);
-            if (StringUtils.isNotBlank(port) && activeProperties.getPort() == 0) {
-                int p = Integer.parseInt(port);
-                activeProperties.setPort(p);
-            } else {
-                LOGGER.warn(
-                        "Server port cannot be modified! You can restart server if you want to take it effect.");
-            }
             String abnormalInternal = properties.getProperty(RaftProperty.ABNORMAL_LEADER_ACTIVE_INTERNAL);
             if (StringUtils.isNotBlank(abnormalInternal)) {
                 int h = Integer.parseInt(abnormalInternal);
@@ -62,6 +58,17 @@ public class RaftPropertiesReader extends PropertiesReader<RaftConfig> {
             if (candidateTimeout != null) {
                 int h = Integer.parseInt(candidateTimeout);
                 activeProperties.setCandidateStatusTimeout(h);
+            }
+            String retryWrite = properties.getProperty(RaftProperty.WRITE_RETRY_TIMES_IF_FAIL);
+            if (StringUtils.isNotBlank(retryWrite)) {
+                int rw = Integer.parseInt(retryWrite);
+                activeProperties.setWriteRetryTimes(rw);
+            }
+            String serverAddr = properties.getProperty(RaftProperty.SERVER_ADDR);
+            if (StringUtils.isNotBlank(serverAddr) && activeProperties.getServerAddr() == null) {
+                activeProperties.setServerAddr(serverAddr);
+            } else {
+                LOGGER.warn("Server address cannot be changed while running!");
             }
         } catch (Exception e) {
             e.printStackTrace();

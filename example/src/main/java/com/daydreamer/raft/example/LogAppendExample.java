@@ -5,7 +5,9 @@ import com.daydreamer.raft.api.entity.constant.LogType;
 import com.daydreamer.raft.protocol.core.Protocol;
 import com.daydreamer.raft.protocol.core.impl.RaftProtocol;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -21,7 +23,7 @@ public class LogAppendExample {
         // append log if wait until 30 sec
         Thread appendLogThread = new Thread(getTask(cluster));
         appendLogThread.start();
-        // wait for append
+        // wait for appending
         Thread.sleep(60 * 1000);
         // close
         cluster.forEach(Protocol::close);
@@ -45,7 +47,9 @@ public class LogAppendExample {
             for (Protocol protocol : protocols) {
                 // find leader
                 try {
-                    boolean write = protocol.write(new Payload<>("Hello, raft", LogType.WRITE));
+                    Map<String, String> metadata = new HashMap<>(1);
+                    metadata.put("key", "Hello raft!");
+                    boolean write = protocol.write(new Payload(metadata, LogType.WRITE));
                     System.out.println("write result:" + write);
                 } catch (IllegalStateException e) {
                     // it not leader

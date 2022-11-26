@@ -161,7 +161,7 @@ public class DefaultLogSender implements LogSender {
                 e.printStackTrace();
             }
         }
-        countDownLatch.await(members.size() * 2500, TimeUnit.MICROSECONDS);
+        countDownLatch.await(members.size() * 5000, TimeUnit.MICROSECONDS);
         return count.get() > (raftMemberManager.getAllMember().size() + 1) / 2;
     }
 }

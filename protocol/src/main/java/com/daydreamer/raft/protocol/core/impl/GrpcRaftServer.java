@@ -60,7 +60,7 @@ public class GrpcRaftServer extends AbstractRaftServer {
     @Override
     protected void doStartServer() {
         try {
-            int port = raftConfig.getPort();
+            int port = raftMemberManager.getSelf().getPort();
             server = ServerBuilder.forPort(port).addService(new GrpcRequestServerCore(requestHandlerHolder)).build()
                     .start();
             LOGGER.info("Server started, listening on port: " + port);

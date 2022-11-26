@@ -1,7 +1,6 @@
 package com.daydreamer.raft.protocol.chain.impl;
 
 import com.daydreamer.raft.api.entity.base.LogEntry;
-import com.daydreamer.raft.api.entity.base.MemberChangeEntry;
 import com.daydreamer.raft.api.entity.base.Payload;
 import com.daydreamer.raft.api.entity.constant.LogType;
 import com.daydreamer.raft.api.entity.constant.MemberChange;
@@ -32,6 +31,10 @@ public class MemberChangeLogPostProcessor implements LogPostProcessor, RaftMembe
     private volatile long lastMemberChangeLogIndex = -1;
     
     private RaftMemberManager raftMemberManager;
+    
+    private String MEMBER_CHANGE_TYPE = "memberChange";
+    
+    private String ADDRESS = "address";
     
     @Override
     public synchronized boolean handleBeforeAppend(LogEntry logEntry) {
@@ -64,14 +67,19 @@ public class MemberChangeLogPostProcessor implements LogPostProcessor, RaftMembe
             return;
         }
         // change member list
-        Payload<MemberChangeEntry> payload = (Payload<MemberChangeEntry>) logEntry.getPayload();
+        Payload payload = logEntry.getPayload();
         // type
-        MemberChange memberChange = payload.getObject().getMemberChange();
-        String addr = payload.getObject().getAddress();
+        MemberChange memberChange = MemberChange.valueOf(payload.getMetadata().get(MEMBER_CHANGE_TYPE));
+        String addr = payload.getMetadata().get(ADDRESS);
         if (MemberChange.ADD.equals(memberChange)) {
             raftMemberManager.addNewMember(addr);
         } else if (MemberChange.REMOVE.equals(memberChange)) {
-            raftMemberManager.removeMember(addr);
+            // check whether down current node
+            if (addr.equals(raftMemberManager.getSelf().getAddress())) {
+                raftMemberManager.removeSelf();
+            } else {
+                raftMemberManager.removeMember(addr);
+            }
         }
         lastMemberChangeLogIndex = -1;
         // TODO update config

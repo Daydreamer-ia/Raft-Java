@@ -1,8 +1,14 @@
 package com.daydreamer.raft.protocol.chain;
 
+import com.daydreamer.raft.api.entity.Request;
+import com.daydreamer.raft.api.entity.Response;
 import com.daydreamer.raft.api.entity.base.LogEntry;
+import com.daydreamer.raft.protocol.aware.RaftMemberManagerAware;
+import com.daydreamer.raft.protocol.aware.RaftServerAware;
+import com.daydreamer.raft.protocol.aware.ReplicatedStateMachineAware;
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
+import com.daydreamer.raft.protocol.handler.RequestHandler;
 import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,9 +63,6 @@ public class LogPostProcessorHolder implements LogPostProcessor {
         this.raftMemberManager = raftMemberManager;
         this.abstractRaftServer = abstractRaftServer;
         this.replicatedStateMachine = replicatedStateMachine;
-    }
-    
-    public LogPostProcessorHolder() {
         init();
     }
     
@@ -83,6 +86,7 @@ public class LogPostProcessorHolder implements LogPostProcessor {
                     String clazzName = packagePrefix + PACKAGE_SEPARATOR + child.getName().replace(CLASS_FORMAT, EMPTY);
                     Class<?> clazz = Class.forName(clazzName);
                     LogPostProcessor logPostProcessor = (LogPostProcessor) clazz.newInstance();
+                    injectAware(logPostProcessor);
                     postProcessors.add(logPostProcessor);
                 }
                 finishInit.set(true);
@@ -90,6 +94,23 @@ public class LogPostProcessorHolder implements LogPostProcessor {
         } catch (Exception e) {
             e.printStackTrace();
             throw new IllegalStateException("Can not load base processor for request", e);
+        }
+    }
+    
+    /**
+     * inject aware
+     *
+     * @param postProcessor postProcessor
+     */
+    private void injectAware(LogPostProcessor postProcessor) {
+        if (postProcessor instanceof RaftMemberManagerAware) {
+            ((RaftMemberManagerAware) postProcessor).setRaftMemberManager(raftMemberManager);
+        }
+        if (postProcessor instanceof RaftServerAware) {
+            ((RaftServerAware) postProcessor).setRaftServer(abstractRaftServer);
+        }
+        if (postProcessor instanceof ReplicatedStateMachineAware) {
+            ((ReplicatedStateMachineAware) postProcessor).setReplicatedStateMachine(replicatedStateMachine);
         }
     }
     

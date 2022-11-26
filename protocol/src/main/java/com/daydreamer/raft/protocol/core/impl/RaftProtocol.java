@@ -19,7 +19,9 @@ import com.daydreamer.raft.protocol.storage.impl.DelegateReplicatedStateMachine;
 import com.daydreamer.raft.protocol.storage.impl.MemoryReplicatedStateMachine;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -31,6 +33,10 @@ import org.apache.log4j.Logger;
 public class RaftProtocol implements Protocol {
     
     private static final Logger LOGGER = Logger.getLogger(RaftProtocol.class);
+    
+    private static final String MEMBER_CHANGE_KEY = "memberChange";
+    
+    private static final String ADDRESS_KEY = "address";
     
     private AbstractRaftServer raftServer;
     
@@ -57,13 +63,13 @@ public class RaftProtocol implements Protocol {
         // init reader, avoid gc
         PropertiesReader<RaftConfig> raftConfigPropertiesReader = null;
         if (raftConfig != null) {
-            raftConfigPropertiesReader = new RaftPropertiesReader(null, false);
+            raftConfigPropertiesReader = new RaftPropertiesReader(raftConfig);
         } else {
-            raftConfigPropertiesReader = new RaftPropertiesReader(raftConfigPath, true);
+            raftConfigPropertiesReader = new RaftPropertiesReader(raftConfigPath);
         }
         raftMemberManager = new MemberManager(raftConfigPropertiesReader);
         replicatedStateMachine = new DelegateReplicatedStateMachine(raftMemberManager,
-                new MemoryReplicatedStateMachine(), new LogPostProcessorHolder());
+                new MemoryReplicatedStateMachine(), new LogPostProcessorHolder(raftMemberManager, raftServer, replicatedStateMachine));
         this.raftConfig = raftConfigPropertiesReader.getProperties();
         logSender = new DefaultLogSender(raftMemberManager, replicatedStateMachine);
         // init server
@@ -73,7 +79,7 @@ public class RaftProtocol implements Protocol {
     }
     
     @Override
-    public synchronized boolean write(Payload<?> payload) throws Exception {
+    public synchronized boolean write(Payload payload) throws Exception {
         // if abnormal
         if (!raftServer.normalCluster()) {
             throw new IllegalStateException(
@@ -141,18 +147,22 @@ public class RaftProtocol implements Protocol {
     }
     
     @Override
-    public void memberChange(Payload<MemberChangeEntry> payload) throws Exception {
-        if (payload == null || payload.getObject() == null) {
+    public boolean memberChange(MemberChangeEntry memberChangeEntry) throws Exception {
+        if (memberChangeEntry == null || memberChangeEntry.getAddress() == null) {
             throw new IllegalArgumentException("payload is null!");
         }
-        if (!LogType.MEMBER_CHANGE.equals(payload.getLogType())) {
-            throw new IllegalArgumentException("Illegal request for member changing!");
-        }
-        if (payload.getObject().getMemberChange() == null) {
+        if (memberChangeEntry.getMemberChange() == null) {
             throw new IllegalArgumentException("Illegal request for member changing!");
         }
         // try to write
-        write(payload);
+        Payload payload = new Payload();
+        Map<String, String> map = new HashMap<>(2);
+        map.put(MEMBER_CHANGE_KEY, memberChangeEntry.getMemberChange().toString());
+        map.put(ADDRESS_KEY, memberChangeEntry.getAddress());
+        payload.setLogType(LogType.MEMBER_CHANGE);
+        payload.setMetadata(map);
+        // write
+        return write(payload);
     }
     
     @Override
@@ -162,7 +172,9 @@ public class RaftProtocol implements Protocol {
     
     @Override
     public void close() {
-        raftServer.close();
-        LOGGER.info("Close finish!");
+        // if leave, it will be close by self
+        if (!raftMemberManager.isSelfLeave()) {
+            raftServer.close();
+        }
     }
 }

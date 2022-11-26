@@ -2,10 +2,12 @@ package com.daydreamer.raft.api.entity.base;
 
 import com.daydreamer.raft.api.entity.constant.MemberChange;
 
+import java.io.Serializable;
+
 /**
  * @author Daydreamer
  */
-public class MemberChangeEntry {
+public class MemberChangeEntry implements Serializable {
     
     private String address;
     

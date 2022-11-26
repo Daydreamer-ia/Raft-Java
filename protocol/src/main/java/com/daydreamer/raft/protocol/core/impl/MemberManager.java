@@ -14,11 +14,9 @@ import io.grpc.ManagedChannelBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -40,11 +38,6 @@ public class MemberManager implements RaftMemberManager {
     
     private List<Member> members = new ArrayList<>();
     
-    /**
-     * whether changing members
-     */
-    private AtomicBoolean isChangingMember = new AtomicBoolean(false);
-    
     public MemberManager(PropertiesReader<RaftConfig> propertiesReader) {
         this.propertiesReader = propertiesReader;
         this.raftConfig = propertiesReader.getProperties();
@@ -55,17 +48,11 @@ public class MemberManager implements RaftMemberManager {
      */
     public void initSelf() {
         try {
-            String ip = InetAddress.getLocalHost().getHostAddress();
-            int port = raftConfig.getPort();
-            Member tmp = new Member();
-            tmp.setIp(ip);
-            tmp.setPort(port);
-            tmp.setAddress(ip + ":" + port);
-            tmp.setRole(NodeRole.CANDIDATE, null);
-            tmp.setMemberId(ip + ":" + port);
-            tmp.setStatus(NodeStatus.UP);
+            String serverAddr = raftConfig.getServerAddr();
+            Member tmp = buildRawMember(serverAddr);
             tmp.setTerm(0);
             tmp.setLogId(-1);
+            tmp.setStatus(NodeStatus.UP);
             self = tmp;
         } catch (Exception e) {
             throw new IllegalStateException("[MemberManager] - Fail to init self message!");
@@ -144,14 +131,17 @@ public class MemberManager implements RaftMemberManager {
     
     @Override
     public boolean removeMember(String id) {
-        return members.removeIf(member -> {
+        boolean remove =  members.removeIf(member -> {
             if (member.getAddress().equals(id)) {
                 member.getConnection().close();
-                LOGGER.info("Remove member, member: {}, current members list: {}", member, members);
                 return true;
             }
             return false;
         });
+        if (remove) {
+            LOGGER.info("Remove member: {}, current members list: {}", id, members);
+        }
+        return remove;
     }
     
     @Override
@@ -167,6 +157,20 @@ public class MemberManager implements RaftMemberManager {
     @Override
     public boolean isLeader() {
         return NodeRole.LEADER.equals(self.getRole());
+    }
+    
+    @Override
+    public boolean isSelfLeave() {
+        return members.isEmpty();
+    }
+    
+    @Override
+    public void removeSelf() {
+        close();
+        members.clear();
+        LOGGER.info("Current member: {} has leave cluster", self.getAddress());
+        // down to follower
+        self.setRole(NodeRole.FOLLOWER);
     }
     
     @Override
