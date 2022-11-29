@@ -33,7 +33,7 @@ public class GrpcFollowerNotifier extends AbstractFollowerNotifier {
         try {
             // if current node is leader
             // tell follower to keep
-            if (raftMemberManager.isLeader()) {
+            if (raftMemberManager.isLeader() && !executor.isShutdown()) {
                 List<Member> allMember = raftMemberManager.getAllMember();
                 // not active a period time
                 CountDownLatch countDownLatch = new CountDownLatch(allMember.size());
@@ -84,6 +84,6 @@ public class GrpcFollowerNotifier extends AbstractFollowerNotifier {
     
     @Override
     public void close() {
-        executor.shutdown();
+        executor.shutdownNow();
     }
 }
