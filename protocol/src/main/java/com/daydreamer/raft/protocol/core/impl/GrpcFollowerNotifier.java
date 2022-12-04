@@ -74,11 +74,10 @@ public class GrpcFollowerNotifier extends AbstractFollowerNotifier {
                     }
                 });
                 // wait for response
-                countDownLatch.await(1500 * allMember.size(), TimeUnit.MILLISECONDS);
+                countDownLatch.await(1500L * allMember.size(), TimeUnit.MILLISECONDS);
             }
         } catch (Exception e) {
             // nothing to do
-            e.printStackTrace();
         }
     }
     
