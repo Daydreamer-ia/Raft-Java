@@ -10,8 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
     
     <artifactId>protocol</artifactId>
-    <version>1.1-SNAPSHOT</version>
-
+    <version>${ddr-raft.version}</version>
 
     <dependencies>
         <dependency>

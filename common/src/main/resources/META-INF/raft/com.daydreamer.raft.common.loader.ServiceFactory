@@ -1,0 +1,3 @@
+com.daydreamer.raft.common.loader.impl.SPIServiceFactory
+com.daydreamer.raft.common.loader.impl.AdaptiveServiceFactory
+com.daydreamer.raft.common.loader.impl.ConfigServiceFactory

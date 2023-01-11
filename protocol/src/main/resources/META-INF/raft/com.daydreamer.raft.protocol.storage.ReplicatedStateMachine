@@ -1,0 +1,2 @@
+com.daydreamer.raft.protocol.storage.impl.DelegateReplicatedStateMachine
+com.daydreamer.raft.protocol.storage.impl.MemoryReplicatedStateMachine

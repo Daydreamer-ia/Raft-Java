@@ -1,5 +1,7 @@
 package com.daydreamer.raft.protocol.core;
 
+import com.daydreamer.raft.common.annotation.SPI;
+import com.daydreamer.raft.common.annotation.SPIMethodInit;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
 import com.daydreamer.raft.transport.connection.Closeable;
 
@@ -12,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p>
  * It is a manager to retain connection
  */
+@SPI("abstractFollowerNotifier")
 public abstract class AbstractFollowerNotifier implements Closeable {
     
     /**
@@ -38,15 +41,11 @@ public abstract class AbstractFollowerNotifier implements Closeable {
         thread.setDaemon(true);
         return thread;
     });
-    
-    public AbstractFollowerNotifier(RaftMemberManager raftMemberManager, RaftConfig raftConfig) {
-        this.raftMemberManager = raftMemberManager;
-        this.raftConfig = raftConfig;
-    }
-    
+
     /**
      * init notifier
      */
+    @SPIMethodInit
     public synchronized void init() {
         if (isInit.get()) {
             return;

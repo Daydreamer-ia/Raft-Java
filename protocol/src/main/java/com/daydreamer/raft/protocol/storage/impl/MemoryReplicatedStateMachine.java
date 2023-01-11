@@ -1,6 +1,7 @@
 package com.daydreamer.raft.protocol.storage.impl;
 
 import com.daydreamer.raft.api.entity.base.LogEntry;
+import com.daydreamer.raft.common.annotation.SPIImplement;
 import com.daydreamer.raft.protocol.exception.LogException;
 import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 
@@ -13,6 +14,7 @@ import java.util.List;
  * <p>
  * storage in memory. its max log id is Integer.MAX_VALUE - 1
  */
+@SPIImplement("memoryReplicatedStateMachine")
 public class MemoryReplicatedStateMachine implements ReplicatedStateMachine {
     
     /**

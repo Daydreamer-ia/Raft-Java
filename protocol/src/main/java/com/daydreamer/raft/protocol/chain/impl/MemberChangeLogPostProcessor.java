@@ -4,7 +4,7 @@ import com.daydreamer.raft.api.entity.base.LogEntry;
 import com.daydreamer.raft.api.entity.base.Payload;
 import com.daydreamer.raft.api.entity.constant.LogType;
 import com.daydreamer.raft.api.entity.constant.MemberChange;
-import com.daydreamer.raft.protocol.aware.RaftMemberManagerAware;
+import com.daydreamer.raft.common.annotation.SPIImplement;
 import com.daydreamer.raft.protocol.chain.LogPostProcessor;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 
@@ -26,7 +26,8 @@ import com.daydreamer.raft.protocol.core.RaftMemberManager;
  * especially, member will enter member change state if it append a log for member changing,
  * it will not accept any member change request unless cover the old member change log
  */
-public class MemberChangeLogPostProcessor implements LogPostProcessor, RaftMemberManagerAware {
+@SPIImplement("memberChangeLogPostProcessor")
+public class MemberChangeLogPostProcessor implements LogPostProcessor {
     
     private volatile long lastMemberChangeLogIndex = -1;
     
@@ -91,8 +92,7 @@ public class MemberChangeLogPostProcessor implements LogPostProcessor, RaftMembe
         // nothing to do
         return true;
     }
-    
-    @Override
+
     public void setRaftMemberManager(RaftMemberManager raftMemberManager) {
         this.raftMemberManager = raftMemberManager;
     }

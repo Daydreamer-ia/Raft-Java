@@ -1,5 +1,6 @@
 package com.daydreamer.raft.protocol.entity;
 
+import com.daydreamer.raft.common.annotation.SPI;
 import com.daydreamer.raft.common.service.ActiveProperties;
 
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.List;
  * <p>
  * voteBaseTime + ramdom() < heartInterval < abnormalActiveInterval
  */
+@SPI("raftConfig")
 public class RaftConfig implements ActiveProperties {
     
     /**

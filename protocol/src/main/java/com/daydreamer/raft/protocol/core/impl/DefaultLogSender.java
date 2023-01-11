@@ -7,6 +7,7 @@ import com.daydreamer.raft.api.entity.base.LogEntry;
 import com.daydreamer.raft.api.entity.request.AppendEntriesRequest;
 import com.daydreamer.raft.api.entity.response.AppendEntriesResponse;
 import com.daydreamer.raft.api.entity.response.ServerErrorResponse;
+import com.daydreamer.raft.common.annotation.SPIImplement;
 import com.daydreamer.raft.protocol.core.LogSender;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.entity.Member;
@@ -17,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -28,6 +28,7 @@ import java.util.function.Predicate;
 /**
  * @author Daydreamer
  */
+@SPIImplement("logSender")
 public class DefaultLogSender implements LogSender {
     
     private Logger LOGGER = LoggerFactory.getLogger(DefaultLogSender.class.getSimpleName());
@@ -36,9 +37,8 @@ public class DefaultLogSender implements LogSender {
     
     private ReplicatedStateMachine replicatedStateMachine;
     
-    public DefaultLogSender(RaftMemberManager raftMemberManager, ReplicatedStateMachine replicatedStateMachine) {
-        this.replicatedStateMachine = replicatedStateMachine;
-        this.raftMemberManager = raftMemberManager;
+    public DefaultLogSender() {
+
     }
     
     @Override
@@ -163,5 +163,13 @@ public class DefaultLogSender implements LogSender {
         }
         countDownLatch.await(members.size() * 5000, TimeUnit.MICROSECONDS);
         return count.get() > (raftMemberManager.getAllMember().size() + 1) / 2;
+    }
+
+    public void setRaftMemberManager(RaftMemberManager raftMemberManager) {
+        this.raftMemberManager = raftMemberManager;
+    }
+
+    public void setReplicatedStateMachine(ReplicatedStateMachine replicatedStateMachine) {
+        this.replicatedStateMachine = replicatedStateMachine;
     }
 }
