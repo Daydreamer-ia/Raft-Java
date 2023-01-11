@@ -3,6 +3,7 @@ package com.daydreamer.raft.protocol.core;
 import com.daydreamer.raft.api.entity.Request;
 import com.daydreamer.raft.api.entity.Response;
 import com.daydreamer.raft.api.entity.base.LogEntry;
+import com.daydreamer.raft.common.annotation.SPI;
 import com.daydreamer.raft.protocol.entity.Member;
 
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.function.Predicate;
 /**
  * @author Daydreamer
  */
+@SPI("logSender")
 public interface LogSender {
     
     /**

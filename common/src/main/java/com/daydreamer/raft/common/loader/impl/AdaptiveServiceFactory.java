@@ -1,10 +1,10 @@
 package com.daydreamer.raft.common.loader.impl;
 
 import com.daydreamer.raft.common.annotation.SPIImplement;
+import com.daydreamer.raft.common.annotation.SPIMethodInit;
 import com.daydreamer.raft.common.loader.RaftServiceLoader;
 import com.daydreamer.raft.common.loader.ServiceFactory;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author Daydreamer
@@ -14,8 +14,15 @@ public class AdaptiveServiceFactory implements ServiceFactory {
 
     private List<ServiceFactory> serviceFactories;
 
+    private String groupKey;
+
     public AdaptiveServiceFactory() {
-        RaftServiceLoader<ServiceFactory> loader = RaftServiceLoader.getLoader(ServiceFactory.class);
+
+    }
+
+    @SPIMethodInit
+    private void init() {
+        RaftServiceLoader<ServiceFactory> loader = RaftServiceLoader.getLoader(groupKey, ServiceFactory.class);
         serviceFactories = loader.getAll();
         // remove current
         serviceFactories.remove(this);
@@ -30,5 +37,10 @@ public class AdaptiveServiceFactory implements ServiceFactory {
             }
         }
         return null;
+    }
+
+    @Override
+    public void setGroupKey(String key) {
+        this.groupKey = key;
     }
 }

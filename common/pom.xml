@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
     
     <artifactId>common</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>${ddr-raft.version}</version>
 
     <properties>
         <commons-lang.version>2.6</commons-lang.version>

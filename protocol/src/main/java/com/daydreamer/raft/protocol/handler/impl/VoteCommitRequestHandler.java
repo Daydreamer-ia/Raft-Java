@@ -1,16 +1,16 @@
 package com.daydreamer.raft.protocol.handler.impl;
 
+import com.daydreamer.raft.common.annotation.SPIImplement;
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
 import com.daydreamer.raft.protocol.handler.RequestHandler;
-import com.daydreamer.raft.protocol.aware.RaftServerAware;
 import com.daydreamer.raft.api.entity.request.VoteCommitRequest;
 import com.daydreamer.raft.api.entity.response.VoteCommitResponse;
 
 /**
  * @author Daydreamer
  */
-public class VoteCommitRequestHandler implements RequestHandler<VoteCommitRequest, VoteCommitResponse>,
-        RaftServerAware {
+@SPIImplement("voteCommitRequestHandler")
+public class VoteCommitRequestHandler implements RequestHandler<VoteCommitRequest, VoteCommitResponse> {
     
     /**
      * raftServer
@@ -41,9 +41,8 @@ public class VoteCommitRequestHandler implements RequestHandler<VoteCommitReques
     public Class<VoteCommitRequest> getSource() {
         return VoteCommitRequest.class;
     }
-    
-    @Override
-    public void setRaftServer(AbstractRaftServer raftServer) {
-        this.raftServer = raftServer;
+
+    public void setAbstractRaftServer(AbstractRaftServer abstractRaftServer) {
+        this.raftServer = abstractRaftServer;
     }
 }

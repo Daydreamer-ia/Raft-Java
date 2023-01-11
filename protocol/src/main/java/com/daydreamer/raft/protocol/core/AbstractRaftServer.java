@@ -3,11 +3,11 @@ package com.daydreamer.raft.protocol.core;
 import com.daydreamer.raft.api.entity.base.LogEntry;
 import com.daydreamer.raft.api.entity.base.Payload;
 import com.daydreamer.raft.api.entity.constant.LogType;
+import com.daydreamer.raft.common.annotation.SPI;
 import com.daydreamer.raft.common.utils.MsgUtils;
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.entity.Member;
 import com.daydreamer.raft.protocol.entity.RaftConfig;
-import com.daydreamer.raft.protocol.handler.RequestHandlerHolder;
 import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * @author Daydreamer
  */
+@SPI("abstractRaftServer")
 public abstract class AbstractRaftServer {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRaftServer.class.getSimpleName());
@@ -35,7 +36,7 @@ public abstract class AbstractRaftServer {
      * no-op
      */
     private static final Map<String, String> NO_OP_META_DATA = new HashMap<>();
-    
+
     /**
      * if there is a leader in cluster
      */
@@ -81,11 +82,6 @@ public abstract class AbstractRaftServer {
     private ReplicatedStateMachine replicatedStateMachine;
     
     /**
-     * registry
-     */
-    protected RequestHandlerHolder requestHandlerHolder;
-    
-    /**
      * log sender
      */
     protected LogSender logSender;
@@ -104,14 +100,8 @@ public abstract class AbstractRaftServer {
         }
     });
     
-    public AbstractRaftServer(RaftConfig raftConfig, RaftMemberManager raftMemberManager,
-            AbstractFollowerNotifier abstractFollowerNotifier, ReplicatedStateMachine replicatedStateMachine,
-            LogSender logSender) {
-        this.raftConfig = raftConfig;
-        this.raftMemberManager = raftMemberManager;
-        this.abstractFollowerNotifier = abstractFollowerNotifier;
-        this.replicatedStateMachine = replicatedStateMachine;
-        this.logSender = logSender;
+    public AbstractRaftServer() {
+
     }
     
     /**
@@ -119,18 +109,10 @@ public abstract class AbstractRaftServer {
      */
     public void start() {
         try {
-            // init request handler
-            requestHandlerHolder = new RequestHandlerHolder(raftMemberManager, this, replicatedStateMachine);
             // load entity
             Class.forName(MsgUtils.class.getName());
-            // init member manager
-            raftMemberManager.init();
-            // init holder
-            requestHandlerHolder.init();
             // start server
             doStartServer();
-            // init notify job
-            abstractFollowerNotifier.init();
             // init job to vote
             initAskVoteLeaderJob();
         } catch (Exception e) {
@@ -319,8 +301,27 @@ public abstract class AbstractRaftServer {
     public int getLastTermCurrentNodeHasVoted() {
         return lastTermCurrentNodeHasVoted;
     }
-    
-    
+
+    public void setReplicatedStateMachine(ReplicatedStateMachine replicatedStateMachine) {
+        this.replicatedStateMachine = replicatedStateMachine;
+    }
+
+    public void setRaftMemberManager(RaftMemberManager raftMemberManager) {
+        this.raftMemberManager = raftMemberManager;
+    }
+
+    public void setAbstractFollowerNotifier(AbstractFollowerNotifier abstractFollowerNotifier) {
+        this.abstractFollowerNotifier = abstractFollowerNotifier;
+    }
+
+    public void setLogSender(LogSender logSender) {
+        this.logSender = logSender;
+    }
+
+    public void setRaftConfig(RaftConfig raftConfig) {
+        this.raftConfig = raftConfig;
+    }
+
     /**
      * close
      */

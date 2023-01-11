@@ -2,7 +2,7 @@ package com.daydreamer.raft.protocol.handler.impl;
 
 import com.daydreamer.raft.api.entity.request.MemberChangeRequest;
 import com.daydreamer.raft.api.entity.response.MemberChangeResponse;
-import com.daydreamer.raft.protocol.aware.ReplicatedStateMachineAware;
+import com.daydreamer.raft.common.annotation.SPIImplement;
 import com.daydreamer.raft.protocol.handler.RequestHandler;
 import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 
@@ -22,7 +22,8 @@ import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
  * especially, member will enter member change state if it append a log for member changing,
  * it will not accept any member change request unless cover the old member change log
  */
-public class MemberChangeRequestHandler implements RequestHandler<MemberChangeRequest, MemberChangeResponse>, ReplicatedStateMachineAware {
+@SPIImplement("memberChangeRequestHandler")
+public class MemberChangeRequestHandler implements RequestHandler<MemberChangeRequest, MemberChangeResponse> {
     
     private long lastMemberChangeLogIndex = -1;
     
@@ -37,8 +38,7 @@ public class MemberChangeRequestHandler implements RequestHandler<MemberChangeRe
     public Class<MemberChangeRequest> getSource() {
         return MemberChangeRequest.class;
     }
-    
-    @Override
+
     public void setReplicatedStateMachine(ReplicatedStateMachine replicatedStateMachine) {
         this.replicatedStateMachine = replicatedStateMachine;
     }

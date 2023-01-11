@@ -1,5 +1,6 @@
 package com.daydreamer.raft.protocol.core.impl;
 
+import com.daydreamer.raft.common.annotation.SPIImplement;
 import com.daydreamer.raft.protocol.constant.NodeStatus;
 import com.daydreamer.raft.protocol.core.AbstractFollowerNotifier;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
@@ -20,12 +21,13 @@ import org.apache.log4j.Logger;
  * <p>
  * It is a implmement to retain grpc connection.
  */
+@SPIImplement("abstractFollowerNotifier")
 public class GrpcFollowerNotifier extends AbstractFollowerNotifier {
     
     private static final Logger LOGGER = Logger.getLogger(GrpcFollowerNotifier.class);
     
-    public GrpcFollowerNotifier(RaftMemberManager raftMemberManager, RaftConfig raftConfig) {
-        super(raftMemberManager, raftConfig);
+    public GrpcFollowerNotifier() {
+
     }
     
     @Override
@@ -79,6 +81,14 @@ public class GrpcFollowerNotifier extends AbstractFollowerNotifier {
         } catch (Exception e) {
             // nothing to do
         }
+    }
+
+    public void setRaftMemberManager(RaftMemberManager raftMemberManager) {
+        this.raftMemberManager = raftMemberManager;
+    }
+
+    public void setRaftConfig(RaftConfig raftConfig) {
+        this.raftConfig = raftConfig;
     }
     
     @Override

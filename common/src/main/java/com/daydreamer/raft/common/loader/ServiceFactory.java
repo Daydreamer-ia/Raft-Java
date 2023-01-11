@@ -6,7 +6,7 @@ import com.daydreamer.raft.common.annotation.SPI;
  * @author Daydreamer
  */
 @SPI("adaptiveServiceFactory")
-public interface ServiceFactory {
+public interface ServiceFactory extends GroupAware{
 
     <T> T getDependency(Class<T> type, String name);
 }

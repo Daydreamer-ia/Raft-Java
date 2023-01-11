@@ -1,7 +1,11 @@
 package com.daydreamer.raft.protocol.storage.impl;
 
 import com.daydreamer.raft.api.entity.base.LogEntry;
-import com.daydreamer.raft.protocol.chain.LogPostProcessorHolder;
+import com.daydreamer.raft.common.annotation.SPIImplement;
+import com.daydreamer.raft.common.annotation.SPIMethodInit;
+import com.daydreamer.raft.common.loader.GroupAware;
+import com.daydreamer.raft.common.loader.RaftServiceLoader;
+import com.daydreamer.raft.protocol.chain.LogPostProcessor;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.exception.LogException;
 import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
@@ -15,32 +19,38 @@ import java.util.List;
 /**
  * @author Daydreamer
  */
-public class DelegateReplicatedStateMachine implements ReplicatedStateMachine {
-    
+@SPIImplement("replicatedStateMachine")
+public class DelegateReplicatedStateMachine implements ReplicatedStateMachine, GroupAware {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(DelegateReplicatedStateMachine.class);
-    
+
     /**
      * raftMemberManager
      */
     private RaftMemberManager raftMemberManager;
-    
+
     /**
      * storageRepository
      */
     private ReplicatedStateMachine replicatedStateMachine;
-    
+
     /**
      * logPostProcessorHolder
      */
-    private LogPostProcessorHolder logPostProcessorHolder;
-    
-    public DelegateReplicatedStateMachine(RaftMemberManager raftMemberManager,
-            ReplicatedStateMachine replicatedStateMachine, LogPostProcessorHolder logPostProcessorHolder) {
-        this.raftMemberManager = raftMemberManager;
-        this.replicatedStateMachine = replicatedStateMachine;
-        this.logPostProcessorHolder = logPostProcessorHolder;
+    private LogPostProcessor logPostProcessor;
+
+    private String groupKey;
+
+    public DelegateReplicatedStateMachine() {
+
     }
-    
+
+    @SPIMethodInit
+    private void init() {
+        this.replicatedStateMachine = RaftServiceLoader.getLoader(groupKey, ReplicatedStateMachine.class)
+                .getInstance("memoryReplicatedStateMachine");
+    }
+
     @Override
     public boolean commit(int term, long logId) throws LogException {
         // no uncommitted log
@@ -55,7 +65,7 @@ public class DelegateReplicatedStateMachine implements ReplicatedStateMachine {
         List<LogEntry> logReadyToCommit = getUncommittedLogUntil(logId);
         boolean continueOp = true;
         for (int i = 0; continueOp && i < logReadyToCommit.size(); i++) {
-            continueOp = logPostProcessorHolder.handleBeforeCommit(logReadyToCommit.get(i));
+            continueOp = logPostProcessor.handleBeforeCommit(logReadyToCommit.get(i));
         }
         // if false
         if (!continueOp) {
@@ -65,14 +75,14 @@ public class DelegateReplicatedStateMachine implements ReplicatedStateMachine {
         boolean commit = replicatedStateMachine.commit(term, logId);
         if (commit) {
             for (LogEntry log : logReadyToCommit) {
-                logPostProcessorHolder.handleAfterCommit(log);
+                logPostProcessor.handleAfterCommit(log);
             }
             LOGGER.info("Member: " + raftMemberManager.getSelf().getAddress() + ", " + replicatedStateMachine
                     .getLogById(logId) + " commit finish!");
         }
         return commit;
     }
-    
+
     /**
      * get log until logIndex
      *
@@ -92,53 +102,70 @@ public class DelegateReplicatedStateMachine implements ReplicatedStateMachine {
         }
         return logEntries;
     }
-    
+
     @Override
     public boolean append(LogEntry logEntry) throws LogException {
         long lastUncommittedLogIndex = getLastUncommittedLogId();
         // filter
-        if (!logPostProcessorHolder.handleBeforeAppend(logEntry)) {
+        if (!logPostProcessor.handleBeforeAppend(logEntry)) {
             return false;
         }
         boolean append = replicatedStateMachine.append(logEntry);
         if (append) {
             long logIndex = lastUncommittedLogIndex + 1;
             while (logIndex <= getLastUncommittedLogId()) {
-                logPostProcessorHolder.handleAfterAppend(logEntry);
+                logPostProcessor.handleAfterAppend(logEntry);
                 logIndex++;
             }
             LOGGER.info("Member: " + raftMemberManager.getSelf().getAddress() + ", " + logEntry + " append finish!");
         }
         return append;
     }
-    
+
     @Override
     public LogEntry getCommittedLog(long logId) {
         return replicatedStateMachine.getCommittedLog(logId);
     }
-    
+
     @Override
     public LogEntry getUncommittedLog(long logId) {
         return replicatedStateMachine.getUncommittedLog(logId);
     }
-    
+
     @Override
     public long getLastCommittedLogId() {
         return replicatedStateMachine.getLastCommittedLogId();
     }
-    
+
     @Override
     public LogEntry getLogById(long logId) {
         return replicatedStateMachine.getLogById(logId);
     }
-    
+
     @Override
     public long getLastUncommittedLogId() {
         return replicatedStateMachine.getLastUncommittedLogId();
     }
-    
+
     @Override
     public void close() {
         replicatedStateMachine.close();
+    }
+
+    public RaftMemberManager getRaftMemberManager() {
+        return raftMemberManager;
+    }
+
+    public void setRaftMemberManager(RaftMemberManager raftMemberManager) {
+        this.raftMemberManager = raftMemberManager;
+    }
+
+    public void setLogPostProcessor(LogPostProcessor logPostProcessor) {
+        this.logPostProcessor = logPostProcessor;
+    }
+
+    @Override
+    public void setGroupKey(String key) {
+        this.groupKey = key;
     }
 }

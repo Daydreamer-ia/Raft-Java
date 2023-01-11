@@ -1,117 +1,37 @@
 package com.daydreamer.raft.protocol.chain;
 
-import com.daydreamer.raft.api.entity.Request;
-import com.daydreamer.raft.api.entity.Response;
 import com.daydreamer.raft.api.entity.base.LogEntry;
-import com.daydreamer.raft.protocol.aware.RaftMemberManagerAware;
-import com.daydreamer.raft.protocol.aware.RaftServerAware;
-import com.daydreamer.raft.protocol.aware.ReplicatedStateMachineAware;
-import com.daydreamer.raft.protocol.core.AbstractRaftServer;
-import com.daydreamer.raft.protocol.core.RaftMemberManager;
-import com.daydreamer.raft.protocol.handler.RequestHandler;
-import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
+import com.daydreamer.raft.common.annotation.SPIImplement;
+import com.daydreamer.raft.common.annotation.SPIMethodInit;
+import com.daydreamer.raft.common.loader.GroupAware;
+import com.daydreamer.raft.common.loader.RaftServiceLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.*;
 
 /**
  * @author Daydreamer
  * <p>
  * registry for {@link LogPostProcessor}
  */
-public class LogPostProcessorHolder implements LogPostProcessor {
+@SPIImplement("logPostProcessor")
+public class LogPostProcessorHolder implements LogPostProcessor, GroupAware {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(LogPostProcessorHolder.class);
     
-    private static final String PROCESSOR_PACKAGE = "com/daydreamer/raft/protocol/chain/impl";
-    
-    private static final String PACKAGE_SEPARATOR = ".";
-    
-    private static final String CLASS_FORMAT = ".class";
-    
-    private static final String EMPTY = "";
-    
-    private List<LogPostProcessor> postProcessors = new ArrayList<>();
-    
-    private RaftMemberManager raftMemberManager;
-    
-    private AbstractRaftServer abstractRaftServer;
-    
-    private ReplicatedStateMachine replicatedStateMachine;
-    
-    /**
-     * whether init
-     */
-    private AtomicBoolean finishInit = new AtomicBoolean(false);
-    
-    
-    /**
-     * scan package and init
-     *
-     * @param raftMemberManager  raftMemberManager
-     * @param replicatedStateMachine  storageRepository
-     * @param abstractRaftServer abstractRaftServer
-     */
-    public LogPostProcessorHolder(RaftMemberManager raftMemberManager, AbstractRaftServer abstractRaftServer,
-            ReplicatedStateMachine replicatedStateMachine) {
-        this.raftMemberManager = raftMemberManager;
-        this.abstractRaftServer = abstractRaftServer;
-        this.replicatedStateMachine = replicatedStateMachine;
-        init();
+    private final List<LogPostProcessor> postProcessors = new ArrayList<>();
+
+    private String groupKey;
+
+    public LogPostProcessorHolder() {
+
     }
-    
-    /**
-     * init {@link LogPostProcessor}
-     */
-    private synchronized void init() {
-        if (finishInit.get()) {
-            return;
-        }
-        try {
-            // load instance
-            File file = new File(
-                    Objects.requireNonNull(LogPostProcessorHolder.class.getClassLoader().getResource(PROCESSOR_PACKAGE))
-                            .getFile());
-            File[] files = file.listFiles();
-            String packagePrefix = PROCESSOR_PACKAGE.replaceAll("/", ".");
-            if (files != null) {
-                // register no args constructor handler
-                for (File child : files) {
-                    String clazzName = packagePrefix + PACKAGE_SEPARATOR + child.getName().replace(CLASS_FORMAT, EMPTY);
-                    Class<?> clazz = Class.forName(clazzName);
-                    LogPostProcessor logPostProcessor = (LogPostProcessor) clazz.newInstance();
-                    injectAware(logPostProcessor);
-                    postProcessors.add(logPostProcessor);
-                }
-                finishInit.set(true);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new IllegalStateException("Can not load base processor for request", e);
-        }
-    }
-    
-    /**
-     * inject aware
-     *
-     * @param postProcessor postProcessor
-     */
-    private void injectAware(LogPostProcessor postProcessor) {
-        if (postProcessor instanceof RaftMemberManagerAware) {
-            ((RaftMemberManagerAware) postProcessor).setRaftMemberManager(raftMemberManager);
-        }
-        if (postProcessor instanceof RaftServerAware) {
-            ((RaftServerAware) postProcessor).setRaftServer(abstractRaftServer);
-        }
-        if (postProcessor instanceof ReplicatedStateMachineAware) {
-            ((ReplicatedStateMachineAware) postProcessor).setReplicatedStateMachine(replicatedStateMachine);
-        }
+
+    @SPIMethodInit
+    private void init() {
+        List<LogPostProcessor> all = RaftServiceLoader.getLoader(groupKey, LogPostProcessor.class).getAll();
+        postProcessors.addAll(all);
+        postProcessors.remove(this);
     }
     
     /**
@@ -178,5 +98,10 @@ public class LogPostProcessorHolder implements LogPostProcessor {
             }
         }
         return continueNext;
+    }
+
+    @Override
+    public void setGroupKey(String key) {
+        this.groupKey = key;
     }
 }

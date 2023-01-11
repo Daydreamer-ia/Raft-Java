@@ -6,8 +6,7 @@ import com.daydreamer.raft.api.entity.constant.ResponseCode;
 import com.daydreamer.raft.api.entity.request.AppendEntriesRequest;
 import com.daydreamer.raft.api.entity.response.AppendEntriesResponse;
 import com.daydreamer.raft.api.entity.response.ServerErrorResponse;
-import com.daydreamer.raft.protocol.aware.RaftMemberManagerAware;
-import com.daydreamer.raft.protocol.aware.ReplicatedStateMachineAware;
+import com.daydreamer.raft.common.annotation.SPIImplement;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.handler.RequestHandler;
 import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
@@ -18,8 +17,9 @@ import java.util.List;
 /**
  * @author Daydreamer
  */
+@SPIImplement("appendEntriesRequestHandler")
 public class AppendEntriesRequestHandler
-        implements RequestHandler<AppendEntriesRequest, Response>, ReplicatedStateMachineAware, RaftMemberManagerAware {
+        implements RequestHandler<AppendEntriesRequest, Response>{
     
     private static final Logger LOGGER = Logger.getLogger(AppendEntriesRequestHandler.class);
     
@@ -103,13 +103,11 @@ public class AppendEntriesRequestHandler
     public Class<AppendEntriesRequest> getSource() {
         return AppendEntriesRequest.class;
     }
-    
-    @Override
+
     public void setReplicatedStateMachine(ReplicatedStateMachine replicatedStateMachine) {
         this.replicatedStateMachine = replicatedStateMachine;
     }
-    
-    @Override
+
     public void setRaftMemberManager(RaftMemberManager raftMemberManager) {
         this.raftMemberManager = raftMemberManager;
     }

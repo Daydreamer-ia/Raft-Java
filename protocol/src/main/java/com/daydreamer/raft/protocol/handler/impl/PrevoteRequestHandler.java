@@ -2,8 +2,7 @@ package com.daydreamer.raft.protocol.handler.impl;
 
 import com.daydreamer.raft.api.entity.request.PrevoteRequest;
 import com.daydreamer.raft.api.entity.response.PrevoteResponse;
-import com.daydreamer.raft.protocol.aware.RaftMemberManagerAware;
-import com.daydreamer.raft.protocol.aware.RaftServerAware;
+import com.daydreamer.raft.common.annotation.SPIImplement;
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.handler.RequestHandler;
@@ -11,7 +10,8 @@ import com.daydreamer.raft.protocol.handler.RequestHandler;
 /**
  * @author Daydreamer
  */
-public class PrevoteRequestHandler implements RequestHandler<PrevoteRequest, PrevoteResponse>, RaftMemberManagerAware, RaftServerAware {
+@SPIImplement("prevoteRequestHandler")
+public class PrevoteRequestHandler implements RequestHandler<PrevoteRequest, PrevoteResponse> {
     
     /**
      * raft members
@@ -55,14 +55,12 @@ public class PrevoteRequestHandler implements RequestHandler<PrevoteRequest, Pre
     public Class<PrevoteRequest> getSource() {
         return PrevoteRequest.class;
     }
-    
-    @Override
+
     public void setRaftMemberManager(RaftMemberManager raftMemberManager) {
         this.raftMemberManager = raftMemberManager;
     }
-    
-    @Override
-    public void setRaftServer(AbstractRaftServer raftServer) {
-        this.raftServer = raftServer;
+
+    public void setAbstractRaftServer(AbstractRaftServer abstractRaftServer) {
+        this.raftServer = abstractRaftServer;
     }
 }

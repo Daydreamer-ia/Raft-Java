@@ -1,6 +1,7 @@
 package com.daydreamer.raft.protocol.core.impl;
 
-import com.daydreamer.raft.common.service.PropertiesReader;
+import com.daydreamer.raft.common.annotation.SPIImplement;
+import com.daydreamer.raft.common.annotation.SPIMethodInit;
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.constant.NodeStatus;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
@@ -24,13 +25,12 @@ import java.util.stream.Collectors;
  * <p>
  * storge member
  */
+@SPIImplement("raftMemberManager")
 public class MemberManager implements RaftMemberManager {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(MemberManager.class.getSimpleName());
     
     private static final String IP_PORT_ADDR_FORMAT = "((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})(\\.((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})){3}:[0-9]{2,5}";
-    
-    private PropertiesReader<RaftConfig> propertiesReader;
     
     private RaftConfig raftConfig;
     
@@ -38,9 +38,8 @@ public class MemberManager implements RaftMemberManager {
     
     private List<Member> members = new ArrayList<>();
     
-    public MemberManager(PropertiesReader<RaftConfig> propertiesReader) {
-        this.propertiesReader = propertiesReader;
-        this.raftConfig = propertiesReader.getProperties();
+    public MemberManager() {
+
     }
     
     /**
@@ -60,6 +59,7 @@ public class MemberManager implements RaftMemberManager {
     }
     
     @Override
+    @SPIMethodInit
     public void init() {
         // init self
         initSelf();
@@ -180,5 +180,9 @@ public class MemberManager implements RaftMemberManager {
                 member.getConnection().close();
             }
         });
+    }
+
+    public void setRaftConfig(RaftConfig raftConfig) {
+        this.raftConfig = raftConfig;
     }
 }

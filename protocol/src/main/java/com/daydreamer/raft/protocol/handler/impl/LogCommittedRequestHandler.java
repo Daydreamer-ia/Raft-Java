@@ -6,7 +6,7 @@ import com.daydreamer.raft.api.entity.constant.ResponseCode;
 import com.daydreamer.raft.api.entity.request.EntryCommittedRequest;
 import com.daydreamer.raft.api.entity.response.EntryCommittedResponse;
 import com.daydreamer.raft.api.entity.response.ServerErrorResponse;
-import com.daydreamer.raft.protocol.aware.ReplicatedStateMachineAware;
+import com.daydreamer.raft.common.annotation.SPIImplement;
 import com.daydreamer.raft.protocol.handler.RequestHandler;
 import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 
@@ -15,8 +15,9 @@ import org.apache.log4j.Logger;
 /**
  * @author Daydreamer
  */
+@SPIImplement("logCommittedRequestHandler")
 public class LogCommittedRequestHandler
-        implements RequestHandler<EntryCommittedRequest, Response>, ReplicatedStateMachineAware {
+        implements RequestHandler<EntryCommittedRequest, Response> {
     
     private static final Logger LOGGER = Logger.getLogger(LogCommittedRequestHandler.class);
     
@@ -45,8 +46,7 @@ public class LogCommittedRequestHandler
     public Class<EntryCommittedRequest> getSource() {
         return EntryCommittedRequest.class;
     }
-    
-    @Override
+
     public void setReplicatedStateMachine(ReplicatedStateMachine replicatedStateMachine) {
         this.replicatedStateMachine = replicatedStateMachine;
     }

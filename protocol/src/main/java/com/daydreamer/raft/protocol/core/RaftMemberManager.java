@@ -1,5 +1,6 @@
 package com.daydreamer.raft.protocol.core;
 
+import com.daydreamer.raft.common.annotation.SPI;
 import com.daydreamer.raft.protocol.entity.Member;
 import com.daydreamer.raft.transport.connection.Closeable;
 
@@ -10,6 +11,7 @@ import java.util.List;
  * <p>
  * It is used to hold the message of member
  */
+@SPI("raftMemberManager")
 public interface RaftMemberManager extends Closeable {
     
     /**

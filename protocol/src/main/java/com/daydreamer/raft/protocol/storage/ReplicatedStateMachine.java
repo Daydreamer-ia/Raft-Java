@@ -1,6 +1,7 @@
 package com.daydreamer.raft.protocol.storage;
 
 import com.daydreamer.raft.api.entity.base.LogEntry;
+import com.daydreamer.raft.common.annotation.SPI;
 import com.daydreamer.raft.protocol.exception.LogException;
 import com.daydreamer.raft.transport.connection.Closeable;
 
@@ -9,6 +10,7 @@ import com.daydreamer.raft.transport.connection.Closeable;
  * <p>
  * log storage
  */
+@SPI("replicatedStateMachine")
 public interface ReplicatedStateMachine extends Closeable {
     
     /**

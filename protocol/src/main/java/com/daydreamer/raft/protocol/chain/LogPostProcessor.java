@@ -1,12 +1,14 @@
 package com.daydreamer.raft.protocol.chain;
 
 import com.daydreamer.raft.api.entity.base.LogEntry;
+import com.daydreamer.raft.common.annotation.SPI;
 
 /**
  * @author Daydreamer
  *
  * LogEntry -append-> LogPostProcessor::handleAfterAppend -commit-> LogPostProcessor::handleAfterCommit
  */
+@SPI("logPostProcessor")
 public interface LogPostProcessor {
     
     /**

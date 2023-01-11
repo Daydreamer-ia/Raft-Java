@@ -1,18 +1,18 @@
 package com.daydreamer.raft.protocol.handler.impl;
 
+import com.daydreamer.raft.common.annotation.SPIImplement;
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.handler.RequestHandler;
-import com.daydreamer.raft.protocol.aware.RaftMemberManagerAware;
-import com.daydreamer.raft.protocol.aware.RaftServerAware;
 import com.daydreamer.raft.api.entity.request.HeartbeatRequest;
 import com.daydreamer.raft.api.entity.response.HeartbeatResponse;
 
 /**
  * @author Daydreamer
  */
+@SPIImplement("heartbeatRequestHandler")
 public class HeartbeatRequestHandler
-        implements RequestHandler<HeartbeatRequest, HeartbeatResponse>, RaftServerAware, RaftMemberManagerAware {
+        implements RequestHandler<HeartbeatRequest, HeartbeatResponse> {
     
     /**
      * raftServer
@@ -48,13 +48,11 @@ public class HeartbeatRequestHandler
     public Class<HeartbeatRequest> getSource() {
         return HeartbeatRequest.class;
     }
-    
-    @Override
-    public void setRaftServer(AbstractRaftServer raftServer) {
+
+    public void setAbstractRaftServer(AbstractRaftServer raftServer) {
         this.raftServer = raftServer;
     }
-    
-    @Override
+
     public void setRaftMemberManager(RaftMemberManager raftMemberManager) {
         this.raftMemberManager = raftMemberManager;
     }
