@@ -200,9 +200,8 @@ public class RaftServiceLoader<T> {
         if (isLoaded.get()) {
             return;
         }
-        if (classLoader == null) {
-            this.classLoader = ClassLoader.getSystemClassLoader();
-        }
+        // fill classLoader
+        getClassLoader();
         // load all clazz names
         if (clazzNames.isEmpty()) {
             for (String path : PATH) {
@@ -266,6 +265,18 @@ public class RaftServiceLoader<T> {
                     + ", default key: " + defaultKey);
         }
         isLoaded.set(true);
+    }
+
+    private void getClassLoader() {
+        if (classLoader == null) {
+            this.classLoader = Thread.currentThread().getContextClassLoader();
+        }
+        if (classLoader == null) {
+            this.classLoader = ClassLoader.getSystemClassLoader();
+        }
+        if (classLoader == null) {
+            this.classLoader = RaftServiceLoader.class.getClassLoader();
+        }
     }
 
     private void init(Object obj) throws InvocationTargetException, IllegalAccessException {
