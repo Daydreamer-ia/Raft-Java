@@ -10,8 +10,8 @@ import java.util.stream.Stream;
 /**
  * @author Daydreamer
  */
-public class ElectionExample {
-    
+public class LeaderElectionExample {
+
     public static void main(String[] args) throws InterruptedException {
         /*
          * start three application with different config to simulate cluster
