@@ -116,7 +116,6 @@ public abstract class AbstractRaftServer {
             // init job to vote
             initAskVoteLeaderJob();
         } catch (Exception e) {
-            e.printStackTrace();
             throw new IllegalStateException("Fail to start raft server, because " + e.getLocalizedMessage());
         }
     }
@@ -191,7 +190,6 @@ public abstract class AbstractRaftServer {
                                 try {
                                     logSender.appendLog(member, noOp);
                                 } catch (Exception e) {
-                                    e.printStackTrace();
                                     LOGGER.error("Fail to append no-op log, member: {}, because {}", member.getAddress(), e.getMessage());
                                 }
                             }

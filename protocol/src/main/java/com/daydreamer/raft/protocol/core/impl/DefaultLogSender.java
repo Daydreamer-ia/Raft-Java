@@ -158,7 +158,6 @@ public class DefaultLogSender implements LogSender {
                 });
             } catch (Exception e) {
                 // nothing to do
-                e.printStackTrace();
             }
         }
         countDownLatch.await(members.size() * 5000, TimeUnit.MICROSECONDS);

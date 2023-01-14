@@ -254,7 +254,6 @@ public class RaftServiceLoader<T> {
                     defaultImpl = (T) instance;
                 }
             } catch (Exception e) {
-                e.printStackTrace();
                 INSTANCE.get(groupKey).remove(clazz.getName());
                 throw new RuntimeException("Fail to instance clazz: " + clazz
                         + ", because " + e.getLocalizedMessage());

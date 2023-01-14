@@ -105,7 +105,6 @@ public class GrpcConnection extends Connection {
             ((ManagedChannel) requesterBlockingStub.getChannel()).awaitTermination(100, TimeUnit.MICROSECONDS);
         } catch (InterruptedException e) {
             // nothing to do
-            e.printStackTrace();
         }
     }
 }

@@ -71,7 +71,6 @@ public class RaftPropertiesReader extends PropertiesReader<RaftConfig> {
                 LOGGER.warn("Server address cannot be changed while running!");
             }
         } catch (Exception e) {
-            e.printStackTrace();
             LOGGER.error("Fail to update properties, because: " + e.getMessage());
         }
     }

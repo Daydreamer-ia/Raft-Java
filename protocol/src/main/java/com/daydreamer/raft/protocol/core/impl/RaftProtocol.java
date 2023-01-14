@@ -125,7 +125,6 @@ public class RaftProtocol implements Protocol {
                         retryTimes--;
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
                     // fail to append
                     retryTimes--;
                 }
