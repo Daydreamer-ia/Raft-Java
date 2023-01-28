@@ -7,9 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * @author Daydreamer
@@ -18,7 +16,7 @@ public abstract class CommitHookManager implements LogPostProcessor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommitHookManager.class);
 
-    protected final Map<Object, Set<CommitHook>> hooks = new ConcurrentHashMap<>();
+    protected final Map<Object, CommitHook> hooks = new ConcurrentHashMap<>();
 
     /**
      * register new hook for key
@@ -26,13 +24,22 @@ public abstract class CommitHookManager implements LogPostProcessor {
      * @param key  key
      * @param hook hook
      */
-    public void register(Object key, CommitHook hook) {
-        Set<CommitHook> commitHooks = hooks.get(key);
+    public synchronized boolean register(Object key, CommitHook hook) {
+        CommitHook commitHooks = hooks.get(key);
         if (commitHooks == null) {
-            hooks.putIfAbsent(key, new CopyOnWriteArraySet<>());
+            hooks.putIfAbsent(key, hook);
+            return true;
         }
-        commitHooks = hooks.get(key);
-        commitHooks.add(hook);
+        return false;
+    }
+
+    /**
+     * unregister hook
+     *
+     * @param key hook key
+     */
+    public synchronized void removeHook(Object key) {
+        hooks.remove(key);
     }
 
     /**

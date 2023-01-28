@@ -11,7 +11,6 @@ import com.daydreamer.raft.protocol.core.CommitHookManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -41,10 +40,8 @@ public class AsynCommitHookManager extends CommitHookManager implements GroupAwa
     @Override
     public void commit(LogEntry logEntry) {
         executor.execute(() -> {
-            for (Set<CommitHook> set : hooks.values()) {
-                for (CommitHook commitHook : set) {
-                    commitHook.handleCommittedLog(logEntry);
-                }
+            for (CommitHook commitHook : hooks.values()) {
+                commitHook.handleCommittedLog(logEntry);
             }
         });
     }
