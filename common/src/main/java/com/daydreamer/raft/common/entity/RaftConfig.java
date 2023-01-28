@@ -1,4 +1,4 @@
-package com.daydreamer.raft.protocol.entity;
+package com.daydreamer.raft.common.entity;
 
 import com.daydreamer.raft.common.annotation.SPI;
 import com.daydreamer.raft.common.service.ActiveProperties;
@@ -49,7 +49,48 @@ public class RaftConfig implements ActiveProperties {
      * write fail, then retry <code>writeRetryTimes</code>
      */
     private int writeRetryTimes = 2;
-    
+
+    /**
+     * reject any write request if current node is follower
+     */
+    private boolean followerRejectWrite = false;
+
+    /**
+     * the count of core thread for default thread pool
+     * {@link com.daydreamer.raft.common.threadpool.impl.CacheThreadPoolFactory}
+     */
+    private int defaultThreadPoolCoreThread = 2;
+
+    /**
+     * the count of max thread for default thread pool
+     * {@link com.daydreamer.raft.common.threadpool.impl.CacheThreadPoolFactory}
+     */
+    private int defaultThreadPoolMaxThread = 2;
+
+    public boolean isFollowerRejectWrite() {
+        return followerRejectWrite;
+    }
+
+    public void setFollowerRejectWrite(boolean followerRejectWrite) {
+        this.followerRejectWrite = followerRejectWrite;
+    }
+
+    public int getDefaultThreadPoolCoreThread() {
+        return defaultThreadPoolCoreThread;
+    }
+
+    public void setDefaultThreadPoolCoreThread(int defaultThreadPoolCoreThread) {
+        this.defaultThreadPoolCoreThread = defaultThreadPoolCoreThread;
+    }
+
+    public int getDefaultThreadPoolMaxThread() {
+        return defaultThreadPoolMaxThread;
+    }
+
+    public void setDefaultThreadPoolMaxThread(int defaultThreadPoolMaxThread) {
+        this.defaultThreadPoolMaxThread = defaultThreadPoolMaxThread;
+    }
+
     public String getServerAddr() {
         return serverAddr;
     }

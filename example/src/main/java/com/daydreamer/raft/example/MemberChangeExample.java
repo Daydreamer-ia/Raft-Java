@@ -4,7 +4,7 @@ import com.daydreamer.raft.api.entity.base.MemberChangeEntry;
 import com.daydreamer.raft.api.entity.constant.MemberChange;
 import com.daydreamer.raft.protocol.core.Protocol;
 import com.daydreamer.raft.protocol.core.impl.RaftProtocol;
-import com.daydreamer.raft.protocol.entity.RaftConfig;
+import com.daydreamer.raft.common.entity.RaftConfig;
 
 import java.util.ArrayList;
 import java.util.List;

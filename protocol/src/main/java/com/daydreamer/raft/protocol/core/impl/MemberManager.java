@@ -5,7 +5,7 @@ import com.daydreamer.raft.common.annotation.SPIMethodInit;
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.constant.NodeStatus;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
-import com.daydreamer.raft.protocol.entity.RaftConfig;
+import com.daydreamer.raft.common.entity.RaftConfig;
 import com.daydreamer.raft.protocol.entity.Member;
 import com.daydreamer.raft.transport.connection.Connection;
 import com.daydreamer.raft.transport.connection.impl.grpc.GrpcConnection;

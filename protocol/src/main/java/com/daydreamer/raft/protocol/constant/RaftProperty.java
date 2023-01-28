@@ -20,5 +20,7 @@ public class RaftProperty {
     public static final String WRITE_RETRY_TIMES_IF_FAIL = "ddr.raft.write-retry-times";
     
     public static final String SERVER_ADDR = "ddr.raft.server-address";
+
+    public static final String REJECT_WRITE_IF_FOLLOWER = "ddr.raft.reject-write-if-follower";
     
 }

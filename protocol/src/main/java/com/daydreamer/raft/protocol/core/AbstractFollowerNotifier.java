@@ -2,7 +2,7 @@ package com.daydreamer.raft.protocol.core;
 
 import com.daydreamer.raft.common.annotation.SPI;
 import com.daydreamer.raft.common.annotation.SPIMethodInit;
-import com.daydreamer.raft.protocol.entity.RaftConfig;
+import com.daydreamer.raft.common.entity.RaftConfig;
 import com.daydreamer.raft.transport.connection.Closeable;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;

@@ -2,7 +2,7 @@ package com.daydreamer.raft.protocol.core.impl;
 
 import com.daydreamer.raft.common.service.PropertiesReader;
 import com.daydreamer.raft.protocol.constant.RaftProperty;
-import com.daydreamer.raft.protocol.entity.RaftConfig;
+import com.daydreamer.raft.common.entity.RaftConfig;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
@@ -69,6 +69,10 @@ public class RaftPropertiesReader extends PropertiesReader<RaftConfig> {
                 activeProperties.setServerAddr(serverAddr);
             } else {
                 LOGGER.warn("Server address cannot be changed while running!");
+            }
+            String rejectWrite = properties.getProperty(RaftProperty.REJECT_WRITE_IF_FOLLOWER);
+            if (StringUtils.isNotBlank(rejectWrite)) {
+                activeProperties.setFollowerRejectWrite(!rejectWrite.contains("false"));
             }
         } catch (Exception e) {
             LOGGER.error("Fail to update properties, because: " + e.getMessage());

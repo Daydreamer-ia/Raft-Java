@@ -7,7 +7,7 @@ import com.daydreamer.raft.common.annotation.SPI;
 import com.daydreamer.raft.common.utils.MsgUtils;
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.entity.Member;
-import com.daydreamer.raft.protocol.entity.RaftConfig;
+import com.daydreamer.raft.common.entity.RaftConfig;
 import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

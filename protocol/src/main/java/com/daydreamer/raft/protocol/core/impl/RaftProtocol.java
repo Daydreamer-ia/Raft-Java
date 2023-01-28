@@ -9,12 +9,11 @@ import com.daydreamer.raft.api.entity.request.EntryCommittedRequest;
 import com.daydreamer.raft.common.loader.RaftServiceLoader;
 import com.daydreamer.raft.common.loader.ServiceFactory;
 import com.daydreamer.raft.common.loader.impl.ConfigServiceFactory;
-import com.daydreamer.raft.common.service.ActiveProperties;
 import com.daydreamer.raft.protocol.core.AbstractRaftServer;
 import com.daydreamer.raft.protocol.core.LogSender;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
 import com.daydreamer.raft.protocol.entity.Member;
-import com.daydreamer.raft.protocol.entity.RaftConfig;
+import com.daydreamer.raft.common.entity.RaftConfig;
 import com.daydreamer.raft.protocol.core.Protocol;
 import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 
