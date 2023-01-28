@@ -18,6 +18,11 @@ public class CacheThreadPoolFactory implements ThreadPoolFactory {
 
     private RaftConfig raftConfig;
 
+    public CacheThreadPoolFactory() {
+        // add hook method to shut down all
+        Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
+    }
+
     @Override
     public Executor getExecutor(Object key) {
         Executor executor = executors.get(key);
@@ -28,7 +33,6 @@ public class CacheThreadPoolFactory implements ThreadPoolFactory {
                     new MemorySafeLinkedBlockingQueue<>(),
                     (run) -> {
                         Thread thread = new Thread(run);
-                        thread.setDaemon(true);
                         thread.setName("[CacheThreadPool] - Thread: " + thread.hashCode());
                         return thread;
                     }, new ThreadPoolExecutor.AbortPolicy());
@@ -40,6 +44,14 @@ public class CacheThreadPoolFactory implements ThreadPoolFactory {
     @Override
     public int getOrder() {
         return ThreadPoolFactory.MIN_PRIORITY;
+    }
+
+    private void shutdown() {
+        executors.values().forEach((e) -> {
+            if (e instanceof ThreadPoolExecutor) {
+                ((ThreadPoolExecutor) e).shutdown();
+            }
+        });
     }
 
     public void setRaftConfig(RaftConfig activeProperties) {
