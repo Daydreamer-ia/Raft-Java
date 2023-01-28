@@ -2,6 +2,10 @@ package com.daydreamer.raft.protocol.core;
 
 import com.daydreamer.raft.api.callback.CommitHook;
 import com.daydreamer.raft.api.entity.base.LogEntry;
+import com.daydreamer.raft.common.annotation.SPIMethodInit;
+import com.daydreamer.raft.common.filter.LogFilter;
+import com.daydreamer.raft.common.loader.GroupAware;
+import com.daydreamer.raft.common.loader.RaftServiceLoader;
 import com.daydreamer.raft.protocol.chain.LogPostProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,11 +16,20 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author Daydreamer
  */
-public abstract class CommitHookManager implements LogPostProcessor {
+public abstract class CommitHookManager implements LogPostProcessor, GroupAware {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommitHookManager.class);
 
+    protected String groupKey;
+
     protected final Map<Object, CommitHook> hooks = new ConcurrentHashMap<>();
+
+    protected LogFilter logFilter;
+
+    @SPIMethodInit
+    private void init() {
+        logFilter = RaftServiceLoader.getLoader(groupKey, LogFilter.class).getDefault();
+    }
 
     /**
      * register new hook for key
@@ -63,7 +76,10 @@ public abstract class CommitHookManager implements LogPostProcessor {
     @Override
     public void handleAfterCommit(LogEntry logEntry) {
         try {
-            commit(logEntry);
+            // if it does not allow to filter
+            if (!logFilter.filter(logEntry)) {
+                commit(logEntry);
+            }
         } catch (Throwable e) {
             LOGGER.error("Fail to do hooks for committed log: " + logEntry + ", "
                     + "because: " + e.getLocalizedMessage());
@@ -74,5 +90,10 @@ public abstract class CommitHookManager implements LogPostProcessor {
     public boolean handleBeforeCommit(LogEntry logEntry) {
         // nothing to do
         return true;
+    }
+
+    @Override
+    public void setGroupKey(String key) {
+        this.groupKey = key;
     }
 }

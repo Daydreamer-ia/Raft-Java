@@ -19,10 +19,6 @@ import java.util.concurrent.Executor;
 @SPIImplement("asynCommitHookManager")
 public class AsynCommitHookManager extends CommitHookManager implements GroupAware {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AsynCommitHookManager.class);
-
-    private String groupKey;
-
     /**
      * job executor
      */
@@ -44,10 +40,5 @@ public class AsynCommitHookManager extends CommitHookManager implements GroupAwa
                 commitHook.handleCommittedLog(logEntry);
             }
         });
-    }
-
-    @Override
-    public void setGroupKey(String key) {
-        this.groupKey = key;
     }
 }

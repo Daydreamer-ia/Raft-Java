@@ -7,7 +7,7 @@ import com.daydreamer.raft.api.entity.base.MemberChangeEntry;
 import com.daydreamer.raft.api.entity.base.Payload;
 import com.daydreamer.raft.api.entity.constant.LogType;
 import com.daydreamer.raft.api.entity.request.EntryCommittedRequest;
-import com.daydreamer.raft.common.annotation.SPISetter;
+import com.daydreamer.raft.common.constant.LogConstant;
 import com.daydreamer.raft.common.loader.RaftServiceLoader;
 import com.daydreamer.raft.common.loader.ServiceFactory;
 import com.daydreamer.raft.common.loader.impl.ConfigServiceFactory;
@@ -174,6 +174,7 @@ public class RaftProtocol implements Protocol {
         Map<String, String> map = new HashMap<>(2);
         map.put(MEMBER_CHANGE_KEY, memberChangeEntry.getMemberChange().toString());
         map.put(ADDRESS_KEY, memberChangeEntry.getAddress());
+        map.put(LogConstant.INNER_LOG_TAG, Boolean.TRUE.toString());
         payload.setLogType(LogType.MEMBER_CHANGE);
         payload.setMetadata(map);
         // write

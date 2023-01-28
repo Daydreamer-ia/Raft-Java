@@ -4,6 +4,7 @@ import com.daydreamer.raft.api.entity.base.LogEntry;
 import com.daydreamer.raft.api.entity.base.Payload;
 import com.daydreamer.raft.api.entity.constant.LogType;
 import com.daydreamer.raft.common.annotation.SPI;
+import com.daydreamer.raft.common.constant.LogConstant;
 import com.daydreamer.raft.common.utils.MsgUtils;
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.entity.Member;
@@ -36,6 +37,11 @@ public abstract class AbstractRaftServer {
      * no-op
      */
     private static final Map<String, String> NO_OP_META_DATA = new HashMap<>();
+
+    static {
+        // inner log
+        NO_OP_META_DATA.put(LogConstant.INNER_LOG_TAG, Boolean.TRUE.toString());
+    }
 
     /**
      * if there is a leader in cluster
