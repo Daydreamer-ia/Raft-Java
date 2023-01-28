@@ -1,2 +1,3 @@
 com.daydreamer.raft.protocol.chain.LogPostProcessorHolder
 com.daydreamer.raft.protocol.chain.impl.MemberChangeLogPostProcessor
+com.daydreamer.raft.protocol.core.impl.AsynCommitHookManager
