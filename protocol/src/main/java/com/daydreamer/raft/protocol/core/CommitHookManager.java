@@ -77,7 +77,7 @@ public abstract class CommitHookManager implements LogPostProcessor, GroupAware 
     public void handleAfterCommit(LogEntry logEntry) {
         try {
             // if it does not allow to filter
-            if (!logFilter.filter(logEntry)) {
+            if (logFilter.filter(logEntry)) {
                 commit(logEntry);
             }
         } catch (Throwable e) {

@@ -20,7 +20,7 @@ public class FilterChain implements LogFilter, GroupAware {
     @SPIMethodInit
     private void init() {
         List<LogFilter> all = RaftServiceLoader.getLoader(groupKey, LogFilter.class).getAll();
-        if (all.size() > 1) {
+        if (all != null) {
             filters.addAll(all);
             filters.remove(this);
         }

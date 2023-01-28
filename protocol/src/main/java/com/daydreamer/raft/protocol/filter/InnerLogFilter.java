@@ -18,13 +18,13 @@ public class InnerLogFilter implements LogFilter {
     public boolean filter(LogEntry logEntry) {
         Payload payload = logEntry.getPayload();
         if (payload == null) {
-            return false;
+            return true;
         }
         Map<String, String> metadata = payload.getMetadata();
         if (metadata == null) {
-            return false;
+            return true;
         }
         String val = metadata.get(LogConstant.INNER_LOG_TAG);
-        return val != null;
+        return val == null;
     }
 }
