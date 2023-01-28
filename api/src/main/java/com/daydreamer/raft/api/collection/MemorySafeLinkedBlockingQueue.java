@@ -35,6 +35,9 @@ public class MemorySafeLinkedBlockingQueue<E> extends LinkedBlockingQueue<E> {
         this.minMemoryAtLeast = minMemoryAtLeast;
     }
 
+    public MemorySafeLinkedBlockingQueue() {
+    }
+
     public MemorySafeLinkedBlockingQueue(RejectPolicy<E> rejectPolicy) {
         this.rejectPolicy = rejectPolicy;
     }
