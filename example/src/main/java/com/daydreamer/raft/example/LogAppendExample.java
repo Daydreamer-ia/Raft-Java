@@ -8,6 +8,7 @@ import com.daydreamer.raft.protocol.core.impl.RaftProtocol;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -18,6 +19,11 @@ public class LogAppendExample {
     
     public static void main(String[] args) throws InterruptedException {
         List<Protocol> cluster = getCluster();
+        // add listener for each server
+        for (Protocol protocol : cluster) {
+            protocol.addListener(UUID.randomUUID().toString(),
+                    logEntry -> System.out.println("Apply Log: " + logEntry));
+        }
         // start
         cluster.forEach(Protocol::run);
         // append log if wait until 30 sec
@@ -28,14 +34,14 @@ public class LogAppendExample {
         // close
         cluster.forEach(Protocol::close);
     }
-    
+
     /**
      * job to append log
      *
      * @return task
      */
     public static Runnable getTask(List<Protocol> protocols) {
-        return  () -> {
+        return () -> {
             try {
                 // wait for cluster ready (to do leader election)
                 Thread.sleep(30 * 1000);
@@ -59,7 +65,7 @@ public class LogAppendExample {
             }
         };
     }
-    
+
     /**
      * get cluster
      *

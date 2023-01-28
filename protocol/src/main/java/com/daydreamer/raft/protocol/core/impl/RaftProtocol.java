@@ -1,21 +1,20 @@
 package com.daydreamer.raft.protocol.core.impl;
 
+import com.daydreamer.raft.api.callback.CommitHook;
 import com.daydreamer.raft.api.entity.base.CommittedResponse;
 import com.daydreamer.raft.api.entity.base.LogEntry;
 import com.daydreamer.raft.api.entity.base.MemberChangeEntry;
 import com.daydreamer.raft.api.entity.base.Payload;
 import com.daydreamer.raft.api.entity.constant.LogType;
 import com.daydreamer.raft.api.entity.request.EntryCommittedRequest;
+import com.daydreamer.raft.common.constant.LogConstant;
 import com.daydreamer.raft.common.loader.RaftServiceLoader;
 import com.daydreamer.raft.common.loader.ServiceFactory;
 import com.daydreamer.raft.common.loader.impl.ConfigServiceFactory;
-import com.daydreamer.raft.common.service.ActiveProperties;
-import com.daydreamer.raft.protocol.core.AbstractRaftServer;
-import com.daydreamer.raft.protocol.core.LogSender;
-import com.daydreamer.raft.protocol.core.RaftMemberManager;
+import com.daydreamer.raft.protocol.chain.LogPostProcessor;
+import com.daydreamer.raft.protocol.core.*;
 import com.daydreamer.raft.protocol.entity.Member;
-import com.daydreamer.raft.protocol.entity.RaftConfig;
-import com.daydreamer.raft.protocol.core.Protocol;
+import com.daydreamer.raft.common.entity.RaftConfig;
 import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 
 import java.util.*;
@@ -49,6 +48,8 @@ public class RaftProtocol implements Protocol {
 
     private ReplicatedStateMachine replicatedStateMachine;
 
+    private CommitHookManager commitHookManager;
+
     private LogSender logSender;
 
     private String groupKey;
@@ -71,6 +72,9 @@ public class RaftProtocol implements Protocol {
         replicatedStateMachine = RaftServiceLoader.getLoader(groupKey, ReplicatedStateMachine.class).getDefault();
         this.raftConfig = raftConfigPropertiesReader.getProperties();
         logSender = RaftServiceLoader.getLoader(groupKey, LogSender.class).getDefault();
+        this.commitHookManager = (CommitHookManager) RaftServiceLoader
+                .getLoader(groupKey, LogPostProcessor.class)
+                .getInstance("asynCommitHookManager");
         // init server
         this.raftServer = RaftServiceLoader.getLoader(groupKey, AbstractRaftServer.class).getDefault();
     }
@@ -125,7 +129,6 @@ public class RaftProtocol implements Protocol {
                         retryTimes--;
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
                     // fail to append
                     retryTimes--;
                 }
@@ -171,10 +174,21 @@ public class RaftProtocol implements Protocol {
         Map<String, String> map = new HashMap<>(2);
         map.put(MEMBER_CHANGE_KEY, memberChangeEntry.getMemberChange().toString());
         map.put(ADDRESS_KEY, memberChangeEntry.getAddress());
+        map.put(LogConstant.INNER_LOG_TAG, Boolean.TRUE.toString());
         payload.setLogType(LogType.MEMBER_CHANGE);
         payload.setMetadata(map);
         // write
         return write(payload);
+    }
+
+    @Override
+    public boolean addListener(Object key, CommitHook commitHook) {
+        return commitHookManager.register(key, commitHook);
+    }
+
+    @Override
+    public void removeListener(Object key) {
+        commitHookManager.removeHook(key);
     }
 
     @Override

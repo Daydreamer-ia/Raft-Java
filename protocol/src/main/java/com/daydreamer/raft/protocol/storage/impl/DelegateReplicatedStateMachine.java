@@ -24,6 +24,8 @@ public class DelegateReplicatedStateMachine implements ReplicatedStateMachine, G
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DelegateReplicatedStateMachine.class);
 
+    private static final String DEFAULT_INSTANCE_NAME = "memoryReplicatedStateMachine";
+
     /**
      * raftMemberManager
      */
@@ -48,7 +50,7 @@ public class DelegateReplicatedStateMachine implements ReplicatedStateMachine, G
     @SPIMethodInit
     private void init() {
         this.replicatedStateMachine = RaftServiceLoader.getLoader(groupKey, ReplicatedStateMachine.class)
-                .getInstance("memoryReplicatedStateMachine");
+                .getInstance(DEFAULT_INSTANCE_NAME);
     }
 
     @Override

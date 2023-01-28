@@ -112,6 +112,9 @@ public class RaftServiceLoader<T> {
                                                       ClassLoader classLoader,
                                                       ServiceFactory serviceFactory,
                                                       String groupKey) {
+        if (groupKey == null) {
+            throw new IllegalStateException("group key is null");
+        }
         LOADERS.putIfAbsent(groupKey, new ConcurrentHashMap<>());
         RaftServiceLoader<?> lazyLoader = LOADERS.get(groupKey).get(interfaceClazz);
         if (Objects.nonNull(lazyLoader)) {
@@ -254,7 +257,6 @@ public class RaftServiceLoader<T> {
                     defaultImpl = (T) instance;
                 }
             } catch (Exception e) {
-                e.printStackTrace();
                 INSTANCE.get(groupKey).remove(clazz.getName());
                 throw new RuntimeException("Fail to instance clazz: " + clazz
                         + ", because " + e.getLocalizedMessage());

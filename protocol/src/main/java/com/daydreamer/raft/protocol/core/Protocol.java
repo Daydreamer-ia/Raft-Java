@@ -1,5 +1,6 @@
 package com.daydreamer.raft.protocol.core;
 
+import com.daydreamer.raft.api.callback.CommitHook;
 import com.daydreamer.raft.api.entity.base.MemberChangeEntry;
 import com.daydreamer.raft.api.entity.base.Payload;
 
@@ -32,6 +33,21 @@ public interface Protocol {
      * @return whether change successfully
      */
     boolean memberChange(MemberChangeEntry memberChangeEntry) throws Exception;
+
+    /**
+     * add the hook method to invoke after log committed
+     *
+     * @param key key
+     * @param commitHook commitHook
+     */
+    boolean addListener(Object key, CommitHook commitHook);
+
+    /**
+     * remove the hook method to invoke after log committed
+     *
+     * @param key key
+     */
+    void removeListener(Object key);
     
     /**
      * start

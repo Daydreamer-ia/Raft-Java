@@ -79,7 +79,6 @@ public class MsgUtils {
             Gson gson = new Gson();
             return gson.fromJson(data, targetClazz);
         } catch (Exception e) {
-            e.printStackTrace();
             throw new IllegalArgumentException("Cannot covert instance, because " + e.getLocalizedMessage());
         }
     }

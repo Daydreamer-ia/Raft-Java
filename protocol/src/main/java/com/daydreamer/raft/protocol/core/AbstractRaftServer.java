@@ -4,10 +4,11 @@ import com.daydreamer.raft.api.entity.base.LogEntry;
 import com.daydreamer.raft.api.entity.base.Payload;
 import com.daydreamer.raft.api.entity.constant.LogType;
 import com.daydreamer.raft.common.annotation.SPI;
+import com.daydreamer.raft.common.constant.LogConstant;
 import com.daydreamer.raft.common.utils.MsgUtils;
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.entity.Member;
-import com.daydreamer.raft.protocol.entity.RaftConfig;
+import com.daydreamer.raft.common.entity.RaftConfig;
 import com.daydreamer.raft.protocol.storage.ReplicatedStateMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,11 @@ public abstract class AbstractRaftServer {
      * no-op
      */
     private static final Map<String, String> NO_OP_META_DATA = new HashMap<>();
+
+    static {
+        // inner log
+        NO_OP_META_DATA.put(LogConstant.INNER_LOG_TAG, Boolean.TRUE.toString());
+    }
 
     /**
      * if there is a leader in cluster
@@ -116,7 +122,6 @@ public abstract class AbstractRaftServer {
             // init job to vote
             initAskVoteLeaderJob();
         } catch (Exception e) {
-            e.printStackTrace();
             throw new IllegalStateException("Fail to start raft server, because " + e.getLocalizedMessage());
         }
     }
@@ -191,7 +196,6 @@ public abstract class AbstractRaftServer {
                                 try {
                                     logSender.appendLog(member, noOp);
                                 } catch (Exception e) {
-                                    e.printStackTrace();
                                     LOGGER.error("Fail to append no-op log, member: {}, because {}", member.getAddress(), e.getMessage());
                                 }
                             }

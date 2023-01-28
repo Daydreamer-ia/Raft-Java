@@ -5,13 +5,14 @@ import com.daydreamer.raft.common.annotation.SPIMethodInit;
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.constant.NodeStatus;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
-import com.daydreamer.raft.protocol.entity.RaftConfig;
+import com.daydreamer.raft.common.entity.RaftConfig;
 import com.daydreamer.raft.protocol.entity.Member;
 import com.daydreamer.raft.transport.connection.Connection;
 import com.daydreamer.raft.transport.connection.impl.grpc.GrpcConnection;
 import com.daydreamer.raft.api.grpc.RequesterGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,13 +49,16 @@ public class MemberManager implements RaftMemberManager {
     public void initSelf() {
         try {
             String serverAddr = raftConfig.getServerAddr();
+            if (StringUtils.isBlank(serverAddr)) {
+                throw new IllegalStateException("Server address is not specified!");
+            }
             Member tmp = buildRawMember(serverAddr);
             tmp.setTerm(0);
             tmp.setLogId(-1);
             tmp.setStatus(NodeStatus.UP);
             self = tmp;
         } catch (Exception e) {
-            throw new IllegalStateException("[MemberManager] - Fail to init self message!");
+            throw new IllegalStateException("[MemberManager] - Fail to init self message, because: " + e.getLocalizedMessage());
         }
     }
     

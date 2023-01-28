@@ -1,7 +1,6 @@
 com.daydreamer.raft.protocol.handler.impl.AppendEntriesRequestHandler
 com.daydreamer.raft.protocol.handler.impl.HeartbeatRequestHandler
 com.daydreamer.raft.protocol.handler.impl.LogCommittedRequestHandler
-com.daydreamer.raft.protocol.handler.impl.MemberChangeRequestHandler
 com.daydreamer.raft.protocol.handler.impl.PrevoteRequestHandler
 com.daydreamer.raft.protocol.handler.impl.VoteCommitRequestHandler
 com.daydreamer.raft.protocol.handler.impl.VoteRequestHandler

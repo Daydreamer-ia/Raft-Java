@@ -89,7 +89,6 @@ public class AppendEntriesRequestHandler
             }
         } catch (Exception e) {
             // nothing to do
-            e.printStackTrace();
             LogEntry lastCommittedLog = replicatedStateMachine
                     .getCommittedLog(replicatedStateMachine.getLastCommittedLogId());
             LOGGER.error("Fail to append log, leader last term: " + request.getLastTerm() + ", leader last log id: "
