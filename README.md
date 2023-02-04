@@ -12,7 +12,7 @@ Study base on MIT 6.824 raft course. I implement it according to my own ideas, s
 <img src="https://img.shields.io/github/last-commit/Daydreamer-ia/Raft-Java" alt="last-commit" />
 <img src="https://img.shields.io/badge/author-Daydreamer--ia-orange" alt="languages-top" /><br/><br/>
 ## Project structure
-<img width="1252" alt="raft-java" src="https://user-images.githubusercontent.com/83362909/216005181-45f0cc2e-a7f3-4d76-bd29-a8172514266f.png">
+<img width="1252" alt="raft-java" src="https://user-images.githubusercontent.com/83362909/216773236-9c8046dd-4006-4f46-95a0-b4756998775c.png">
 
 <br/><br/>
 Here are my notes in Chinese: 
