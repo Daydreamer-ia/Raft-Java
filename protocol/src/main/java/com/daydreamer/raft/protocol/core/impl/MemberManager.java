@@ -2,6 +2,8 @@ package com.daydreamer.raft.protocol.core.impl;
 
 import com.daydreamer.raft.common.annotation.SPIImplement;
 import com.daydreamer.raft.common.annotation.SPIMethodInit;
+import com.daydreamer.raft.common.loader.GroupAware;
+import com.daydreamer.raft.common.loader.RaftServiceLoader;
 import com.daydreamer.raft.protocol.constant.NodeRole;
 import com.daydreamer.raft.protocol.constant.NodeStatus;
 import com.daydreamer.raft.protocol.core.RaftMemberManager;
@@ -10,6 +12,7 @@ import com.daydreamer.raft.protocol.entity.Member;
 import com.daydreamer.raft.transport.connection.Connection;
 import com.daydreamer.raft.transport.connection.impl.grpc.GrpcConnection;
 import com.daydreamer.raft.api.grpc.RequesterGrpc;
+import com.daydreamer.raft.transport.factory.ConnectionFactory;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.apache.commons.lang.StringUtils;
@@ -27,9 +30,11 @@ import java.util.stream.Collectors;
  * storge member
  */
 @SPIImplement("raftMemberManager")
-public class MemberManager implements RaftMemberManager {
+public class MemberManager implements RaftMemberManager, GroupAware {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(MemberManager.class.getSimpleName());
+
+    private static final String DEFAULT_CONNECTION_KEY = "grpc";
     
     private static final String IP_PORT_ADDR_FORMAT = "((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})(\\.((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})){3}:[0-9]{2,5}";
     
@@ -38,7 +43,11 @@ public class MemberManager implements RaftMemberManager {
     private Member self;
     
     private List<Member> members = new ArrayList<>();
-    
+
+    private String groupKey;
+
+    private ConnectionFactory connectionFactory;
+
     public MemberManager() {
 
     }
@@ -67,6 +76,8 @@ public class MemberManager implements RaftMemberManager {
     public void init() {
         // init self
         initSelf();
+        // get connection factory
+        connectionFactory = RaftServiceLoader.getLoader(groupKey, ConnectionFactory.class).getInstance(DEFAULT_CONNECTION_KEY);
         // load member
         List<String> memberAddresses = raftConfig.getMemberAddresses();
         for (String addr : memberAddresses) {
@@ -105,13 +116,7 @@ public class MemberManager implements RaftMemberManager {
      * @return conn
      */
     private Connection createConnection(Member member) {
-        // init channel
-        ManagedChannel channel = ManagedChannelBuilder.forAddress(member.getIp(), member.getPort())
-                .usePlaintext()
-                .build();
-        // init service rpc Stub
-        RequesterGrpc.RequesterBlockingStub blockingStub = RequesterGrpc.newBlockingStub(channel);
-        return new GrpcConnection(member.getAddress(), blockingStub);
+        return connectionFactory.getConnection(member.getIp(), member.getPort(), null);
     }
     
     @Override
@@ -188,5 +193,10 @@ public class MemberManager implements RaftMemberManager {
 
     public void setRaftConfig(RaftConfig raftConfig) {
         this.raftConfig = raftConfig;
+    }
+
+    @Override
+    public void setGroupKey(String key) {
+        this.groupKey = key;
     }
 }
