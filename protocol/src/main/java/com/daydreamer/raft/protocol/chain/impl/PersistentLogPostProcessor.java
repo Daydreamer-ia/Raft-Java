@@ -53,8 +53,9 @@ public class PersistentLogPostProcessor implements LogPostProcessor {
                 if (!dataDir.exists()) {
                     createNewDir(dataDir);
                 }
+                String address = raftConfig.getServerAddr().replace(":", "_");
                 File dataFile = new File(raftConfig.getDataDir() + File.separator + DIR_FILE
-                        + File.separator + LOG_STORAGE_FILE);
+                        + File.separator + LOG_STORAGE_FILE + "_" + address);
                 if (!dataFile.exists()) {
                     createNewFile(dataFile);
                 }
@@ -86,7 +87,9 @@ public class PersistentLogPostProcessor implements LogPostProcessor {
         try {
             if (this.enabled) {
                 logAppendStream.writeObject(logEntry);
+                logAppendStream.flush();
             }
+            return true;
         } catch (Exception e) {
             LOGGER.error("Fail to persist log: {} to disk", logEntry);
         }
