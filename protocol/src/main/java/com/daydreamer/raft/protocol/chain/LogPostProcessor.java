@@ -17,21 +17,27 @@ public interface LogPostProcessor {
      * @param logEntry log entry
      * @return whether continue to append
      */
-    boolean handleBeforeAppend(LogEntry logEntry);
+    default boolean handleBeforeAppend(LogEntry logEntry) {
+        return true;
+    }
     
     /**
      * post process log entry
      *
      * @param logEntry log entry
      */
-    void handleAfterAppend(LogEntry logEntry);
+    default void handleAfterAppend(LogEntry logEntry) {
+
+    }
     
     /**
      * post process log entry
      *
      * @param logEntry log entry
      */
-    void handleAfterCommit(LogEntry logEntry);
+    default void handleAfterCommit(LogEntry logEntry) {
+
+    }
     
     /**
      * post process log entry
@@ -39,6 +45,8 @@ public interface LogPostProcessor {
      * @param logEntry log entry
      * @return whether continue to commit
      */
-    boolean handleBeforeCommit(LogEntry logEntry);
+    default boolean handleBeforeCommit(LogEntry logEntry) {
+        return true;
+    }
     
 }

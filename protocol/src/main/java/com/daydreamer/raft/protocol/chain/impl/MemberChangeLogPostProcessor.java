@@ -86,12 +86,6 @@ public class MemberChangeLogPostProcessor implements LogPostProcessor {
         // TODO update config
         
     }
-    
-    @Override
-    public boolean handleBeforeCommit(LogEntry logEntry) {
-        // nothing to do
-        return true;
-    }
 
     public void setRaftMemberManager(RaftMemberManager raftMemberManager) {
         this.raftMemberManager = raftMemberManager;

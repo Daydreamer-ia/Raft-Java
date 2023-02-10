@@ -63,17 +63,6 @@ public abstract class CommitHookManager implements LogPostProcessor, GroupAware 
     public abstract void commit(LogEntry logEntry);
 
     @Override
-    public boolean handleBeforeAppend(LogEntry logEntry) {
-        // nothing to do
-        return true;
-    }
-
-    @Override
-    public void handleAfterAppend(LogEntry logEntry) {
-        // nothing to do
-    }
-
-    @Override
     public void handleAfterCommit(LogEntry logEntry) {
         try {
             // if it does not allow to filter
@@ -84,12 +73,6 @@ public abstract class CommitHookManager implements LogPostProcessor, GroupAware 
             LOGGER.error("Fail to do hooks for committed log: " + logEntry + ", "
                     + "because: " + e.getLocalizedMessage());
         }
-    }
-
-    @Override
-    public boolean handleBeforeCommit(LogEntry logEntry) {
-        // nothing to do
-        return true;
     }
 
     @Override

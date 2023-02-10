@@ -15,6 +15,7 @@
         <module>protocol</module>
         <module>example</module>
         <module>api</module>
+        <module>persistence</module>
     </modules>
     
     <properties>
