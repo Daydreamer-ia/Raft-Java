@@ -74,6 +74,12 @@ public class RaftPropertiesReader extends PropertiesReader<RaftConfig> {
             if (StringUtils.isNotBlank(rejectWrite)) {
                 activeProperties.setFollowerRejectWrite(!rejectWrite.contains("false"));
             }
+            String defaultPoolCore = properties.getProperty(RaftProperty.DEFAULT_THREAD_POOL_CORE);
+            String defaultPoolMax = properties.getProperty(RaftProperty.DEFAULT_THREAD_POOL_MAX);
+            if (StringUtils.isNotBlank(defaultPoolCore) && StringUtils.isNotBlank(defaultPoolMax)) {
+                activeProperties.setDefaultThreadPoolMaxThread(Integer.parseInt(defaultPoolMax));
+                activeProperties.setDefaultThreadPoolCoreThread(Integer.parseInt(defaultPoolCore));
+            }
         } catch (Exception e) {
             LOGGER.error("Fail to update properties, because: " + e.getMessage());
         }

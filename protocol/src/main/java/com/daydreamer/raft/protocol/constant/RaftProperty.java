@@ -22,5 +22,11 @@ public class RaftProperty {
     public static final String SERVER_ADDR = "ddr.raft.server-address";
 
     public static final String REJECT_WRITE_IF_FOLLOWER = "ddr.raft.reject-write-if-follower";
+
+    public static final String DEFAULT_THREAD_POOL_CORE = "ddr.raft.thread-pool.default.core";
+
+    public static final String DEFAULT_THREAD_POOL_MAX = "ddr.raft.thread-pool.default.max";
+
+    public static final String LOG_DATA_DIR = "ddr.raft.data.dir";
     
 }

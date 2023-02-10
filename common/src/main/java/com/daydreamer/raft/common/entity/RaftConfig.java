@@ -67,6 +67,11 @@ public class RaftConfig implements ActiveProperties {
      */
     private int defaultThreadPoolMaxThread = 2;
 
+    /**
+     * log data dir
+     */
+    private String dataDir;
+
     public boolean isFollowerRejectWrite() {
         return followerRejectWrite;
     }
@@ -81,6 +86,14 @@ public class RaftConfig implements ActiveProperties {
 
     public void setDefaultThreadPoolCoreThread(int defaultThreadPoolCoreThread) {
         this.defaultThreadPoolCoreThread = defaultThreadPoolCoreThread;
+    }
+
+    public String getDataDir() {
+        return dataDir;
+    }
+
+    public void setDataDir(String dataDir) {
+        this.dataDir = dataDir;
     }
 
     public int getDefaultThreadPoolMaxThread() {

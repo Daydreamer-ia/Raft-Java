@@ -8,8 +8,6 @@ import com.daydreamer.raft.common.loader.GroupAware;
 import com.daydreamer.raft.common.loader.RaftServiceLoader;
 import com.daydreamer.raft.common.threadpool.ThreadPoolFactory;
 import com.daydreamer.raft.protocol.core.CommitHookManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Executor;
 
