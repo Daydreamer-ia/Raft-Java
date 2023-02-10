@@ -70,7 +70,12 @@ public class RaftConfig implements ActiveProperties {
     /**
      * log data dir
      */
-    private String dataDir;
+    private String dataDir = System.getProperty("user.home");
+
+    /**
+     * persistent log
+     */
+    private boolean persistent = false;
 
     public boolean isFollowerRejectWrite() {
         return followerRejectWrite;
@@ -90,6 +95,14 @@ public class RaftConfig implements ActiveProperties {
 
     public String getDataDir() {
         return dataDir;
+    }
+
+    public boolean isPersistent() {
+        return persistent;
+    }
+
+    public void setPersistent(boolean persistent) {
+        this.persistent = persistent;
     }
 
     public void setDataDir(String dataDir) {

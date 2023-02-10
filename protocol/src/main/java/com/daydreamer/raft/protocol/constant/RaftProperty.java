@@ -28,5 +28,7 @@ public class RaftProperty {
     public static final String DEFAULT_THREAD_POOL_MAX = "ddr.raft.thread-pool.default.max";
 
     public static final String LOG_DATA_DIR = "ddr.raft.data.dir";
+
+    public static final String LOG_PERSISTENT = "ddr.raft.persistent-log";
     
 }

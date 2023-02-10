@@ -8,23 +8,28 @@ import org.apache.commons.lang.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
+
 import org.apache.log4j.Logger;
 
 /**
  * @author Daydreamer
  */
 public class RaftPropertiesReader extends PropertiesReader<RaftConfig> {
-    
+
     private static final Logger LOGGER = Logger.getLogger(RaftPropertiesReader.class);
-    
+
+    private static final AtomicBoolean init = new AtomicBoolean(false);
+
     public RaftPropertiesReader(String filePath) {
         super(filePath, new RaftConfig(), true);
     }
-    
+
     public RaftPropertiesReader(RaftConfig raftConfig) {
         super(null, raftConfig, false);
     }
-    
+
     @Override
     public void populateProperties(Properties properties, RaftConfig activeProperties) {
         try {
@@ -80,8 +85,27 @@ public class RaftPropertiesReader extends PropertiesReader<RaftConfig> {
                 activeProperties.setDefaultThreadPoolMaxThread(Integer.parseInt(defaultPoolMax));
                 activeProperties.setDefaultThreadPoolCoreThread(Integer.parseInt(defaultPoolCore));
             }
+            String enablePersistenceStr = properties.getProperty(RaftProperty.LOG_PERSISTENT);
+            boolean enablePersistence = getValue(() -> Boolean.valueOf(enablePersistenceStr),
+                    true, "Fail to load enablePersistence");
+            activeProperties.setPersistent(enablePersistence);
+            String dataDir = properties.getProperty(RaftProperty.LOG_DATA_DIR);
+            if (!init.get() && dataDir != null) {
+                activeProperties.setDataDir(dataDir);
+            }
+            init.set(true);
         } catch (Exception e) {
+            e.printStackTrace();
             LOGGER.error("Fail to update properties, because: " + e.getMessage());
+        }
+    }
+
+    private static <T> T getValue(Supplier<T> supplier, T defaultVal, String errorMsg) {
+        try {
+            return supplier.get();
+        } catch (Exception e) {
+            LOGGER.error(errorMsg + ", because" + e.getLocalizedMessage());
+            return defaultVal;
         }
     }
 }
